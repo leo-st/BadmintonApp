@@ -1,177 +1,205 @@
-# Badminton App
+# 🏸 Badminton App
 
-A badminton match tracking application for local groups of friends who play together and organize tournaments.
+A full-stack badminton match tracking application with **FastAPI backend** and **React Native mobile app**. Perfect for local groups of friends to track matches and tournaments!
 
-## Features
+## ✨ Features
 
-- **User Registration & Authentication**: Register new users and secure login
-- **Match Tracking**: Submit match results with verification system
-- **Match Types**: Separate casual matches from tournament matches
-- **Tournament Management**: Create and manage tournaments
-- **Match Verification**: Other player must verify match results
-- **REST API**: FastAPI backend with automatic Swagger documentation
+- 🏓 **Match Tracking** - Record and verify match results
+- 🏆 **Tournament Management** - Organize and track tournaments
+- 👥 **User Management** - Register and manage players
+- 📱 **Mobile App** - Native iOS/Android app with Expo
+- 🔐 **Secure Authentication** - JWT with cookie-based auth
+- 🐳 **Docker Ready** - Easy deployment with Docker Compose
+- 🧪 **Fully Tested** - Comprehensive test suite
 
-## Tech Stack
+## 🛠 Tech Stack
 
-- **Backend**: FastAPI (Python)
-- **Database**: PostgreSQL with custom initialization scripts
-- **Authentication**: JWT tokens
-- **Containerization**: Docker & Docker Compose
-- **Dependency Management**: Poetry
-- **Architecture**: Clean separation with routers, models, schemas, and core modules
+### Backend
+- **FastAPI** (Python) - Modern, fast web framework
+- **PostgreSQL** - Robust relational database
+- **SQLAlchemy** - Python ORM
+- **JWT + Cookies** - Secure authentication
+- **Pydantic** - Data validation
 
-## Project Structure
+### Mobile
+- **React Native** - Cross-platform mobile development
+- **Expo** - Easy development and deployment
+- **TypeScript** - Type-safe development
+- **React Navigation** - Navigation library
+- **React Native Paper** - Material Design components
+
+### DevOps
+- **Docker & Docker Compose** - Containerization
+- **Poetry** - Python dependency management
+- **Pytest** - Testing framework
+- **Ruff** - Fast Python linter
+- **MyPy** - Static type checking
+
+## 🚀 Quick Start
+
+### Option 1: Docker (Recommended)
+
+1. **Clone and start**
+   ```bash
+   git clone <your-repo-url>
+   cd BadmintonApp
+   make up-detached
+   ```
+
+2. **Access the app**
+   - API: http://localhost:8000/docs
+   - Mobile: `cd mobile && npm start`
+
+### Option 2: Local Development
+
+1. **Backend setup**
+   ```bash
+   make init
+   make test
+   ```
+
+2. **Mobile setup**
+   ```bash
+   cd mobile
+   npm install
+   npm start
+   ```
+
+## 📱 Mobile App Development
+
+### On MacBook Pro (Recommended)
+```bash
+cd mobile
+npm run ios      # iOS Simulator
+npm run android  # Android Emulator
+npm run web      # Web browser
+```
+
+### On Linux with iPhone
+```bash
+cd mobile
+npm start        # Scan QR code with Expo Go
+```
+
+## 🎯 Sample Accounts
+
+| Username | Password | Role |
+|----------|----------|------|
+| alice    | password123 | Player |
+| bob      | password123 | Player |
+| charlie  | password123 | Player |
+| diana    | password123 | Player |
+
+## 📋 Available Commands
+
+```bash
+# Development
+make init              # Install dependencies
+make test              # Run all tests
+make test-unit         # Unit tests only
+make test-integration  # Integration tests only
+make lint              # Code linting
+
+# Docker
+make up                # Start services
+make up-detached       # Start in background
+make down              # Stop services
+make logs              # View logs
+make restart           # Restart services
+
+# Mobile
+cd mobile
+npm start              # Start Expo dev server
+npm run ios            # iOS Simulator (Mac only)
+npm run android        # Android Emulator
+npm run web            # Web browser
+```
+
+## 🏗 Project Structure
 
 ```
-badminton-app/
-├── app/
-│   ├── api/
-│   │   └── routers/          # API endpoint routers
-│   │       ├── auth.py       # Authentication endpoints
-│   │       ├── users.py      # User management endpoints
-│   │       ├── matches.py    # Match management endpoints
-│   │       └── tournaments.py # Tournament endpoints
-│   ├── common/
-│   │   └── enums.py          # Application enums
-│   ├── core/
-│   │   ├── auth.py           # Authentication logic
-│   │   ├── config.py         # Configuration settings
-│   │   └── database.py       # Database connection
-│   ├── models/
-│   │   └── models.py         # SQLAlchemy models
-│   └── schemas/
-│       └── schemas.py        # Pydantic schemas
-├── db/
-│   └── postgres/
-│       └── init/             # Database initialization scripts
-│           ├── 000_create_schema.sql
-│           ├── 001_create_tables.sql
-│           └── 002_load_sample_data.sql
-├── main.py                   # FastAPI application entry point
-├── init_db.py               # Database initialization script
-├── docker-compose.yml       # Docker Compose configuration
-├── docker-compose.local.yml # Development Docker Compose configuration
-├── Dockerfile.api           # Backend Docker image
-├── Dockerfile.postgres      # PostgreSQL Docker image
-└── pyproject.toml          # Poetry dependencies
+BadmintonApp/
+├── 🐍 Backend (FastAPI)
+│   ├── app/
+│   │   ├── api/routers/     # API endpoints
+│   │   ├── core/            # Core functionality
+│   │   ├── models/          # Database models
+│   │   └── schemas/         # Data validation
+│   ├── db/postgres/         # Database scripts
+│   └── tests/               # Test suite
+│
+├── 📱 Mobile (React Native)
+│   ├── src/
+│   │   ├── screens/         # App screens
+│   │   ├── services/        # API services
+│   │   ├── context/         # State management
+│   │   └── types/           # TypeScript types
+│   └── App.tsx              # Main app component
+│
+└── 🐳 Docker
+    ├── Dockerfile.api       # Backend container
+    ├── Dockerfile.postgres  # Database container
+    └── docker-compose.yml   # Orchestration
 ```
 
-## Quick Start
-
-### Prerequisites
-
-- Docker and Docker Compose
-- Poetry (for local development)
-
-### Using Docker Compose (Recommended)
-
-1. Clone the repository
-2. Run the application:
-   ```bash
-   docker-compose up --build
-   ```
-
-3. Access the API documentation at: http://localhost:8000/docs
-4. Access the database at: localhost:5432
-
-### Local Development
-
-1. Install Poetry if you haven't already:
-   ```bash
-   curl -sSL https://install.python-poetry.org | python3 -
-   ```
-
-2. Install dependencies:
-   ```bash
-   poetry install
-   ```
-
-3. Start PostgreSQL (using Docker):
-   ```bash
-   docker run --name badminton-postgres -e POSTGRES_DB=badminton_app -e POSTGRES_USER=badminton_user -e POSTGRES_PASSWORD=badminton_password -p 5432:5432 -d postgres:15
-   ```
-
-4. Run the application:
-   ```bash
-   poetry run uvicorn main:app --reload
-   ```
-
-## API Endpoints
+## 🔌 API Endpoints
 
 ### Authentication
-- `POST /register` - Register a new user
-- `POST /token` - Login and get access token
-
-### Users
-- `GET /users/me` - Get current user info
-- `GET /users` - List all users
+- `POST /auth/login` - Login (sets cookie)
+- `POST /auth/logout` - Logout (clears cookie)
+- `POST /auth/register` - Register new user
 
 ### Matches
-- `POST /matches` - Submit a new match result
-- `GET /matches` - List matches (with filters)
-- `GET /matches/{match_id}` - Get specific match
-- `POST /matches/{match_id}/verify` - Verify a match result
+- `GET /matches` - List matches (with filtering)
+- `POST /matches` - Create match
+- `POST /matches/{id}/verify` - Verify match
 
 ### Tournaments
-- `POST /tournaments` - Create a new tournament
 - `GET /tournaments` - List tournaments
-- `GET /tournaments/{tournament_id}` - Get specific tournament
+- `POST /tournaments` - Create tournament
 
-## Database Schema
-
-- **Users**: Store user information and authentication
-- **Matches**: Track match results with verification status
-- **Tournaments**: Manage tournament information
-- **Match Types**: Casual vs Tournament matches
-- **Verification System**: Pending → Verified/Rejected
-
-## Development
-
-### Testing
-
-The project includes comprehensive unit and integration tests:
+## 🧪 Testing
 
 ```bash
-# Run all tests with coverage
+# Run all tests
 make test
 
-# Run only unit tests
-make test-unit
+# Specific test types
+make test-unit         # Unit tests
+make test-integration  # API tests
 
-# Run only integration tests
-make test-integration
-
-# Run linting
-make lint
-
-# Run type checking
-make type-check
+# With coverage
+poetry run pytest --cov=app tests/
 ```
 
-### Code Quality
+## 🚀 Deployment
 
-- **Ruff**: Fast Python linter and formatter
-- **MyPy**: Static type checking
-- **Pytest**: Testing framework with coverage reporting
-
-### Available Make Commands
-
+### Development
 ```bash
-make help              # Show all available commands
-make init              # Install dependencies
-make test              # Run tests with coverage
-make lint              # Run code linting
-make type-check         # Run type checking
-make up                 # Start services
-make down               # Stop services
-make logs               # View logs
-make clean              # Clean up containers and volumes
+make up-detached
 ```
 
-## Next Steps
+### Production
+```bash
+# Update docker-compose.yml for production
+# Set proper environment variables
+# Deploy to your preferred cloud provider
+```
 
-- [ ] iOS app development (React Native/Flutter)
-- [ ] Real-time notifications
-- [ ] Statistics and leaderboards
-- [ ] Tournament brackets
-- [ ] Photo uploads for matches
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with ❤️ for badminton enthusiasts
+- Perfect for local friend groups
+- Ready for iOS development on MacBook Pro
