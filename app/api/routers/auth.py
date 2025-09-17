@@ -1,0 +1,84 @@
+from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
+from datetime import timedelta
+
+from app.core.database import get_db
+from app.models.models import User
+from app.schemas.schemas import UserCreate, UserResponse, UserLogin
+from app.core.auth import authenticate_user, create_access_token, get_password_hash, get_current_user
+from app.core.config import settings
+
+router = APIRouter(prefix="/auth", tags=["authentication"])
+
+@router.post("/register", response_model=UserResponse)
+def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    # Check if user already exists
+    db_user = db.query(User).filter(
+        (User.username == user.username) | (User.email == user.email)
+    ).first()
+    if db_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Username or email already registered"
+        )
+    
+    # Create new user
+    hashed_password = get_password_hash(user.password)
+    db_user = User(
+        username=user.username,
+        email=user.email,
+        full_name=user.full_name,
+        hashed_password=hashed_password
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+@router.post("/login")
+async def authenticate(
+    user_login: UserLogin,
+    db: Session = Depends(get_db),
+):
+    """
+    Verify login details and issue JWT in an HttpOnly cookie.
+    """
+    user = User.authenticate(db, username=user_login.username, password=user_login.password)
+    if not user:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+
+    # create JWT
+    expires = timedelta(minutes=settings.access_token_expire_minutes)
+    access_token = create_access_token(
+        subject=user.username,
+        expires_delta=expires,
+    )
+
+    # set it as a cookie
+    response = JSONResponse(content={"message": "login successful"})
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="lax",
+        secure=False,  # Set to True in production with HTTPS
+        max_age=settings.access_token_expire_minutes * 60
+    )
+    return response
+
+@router.post("/logout")
+async def logout(
+    _user = Depends(get_current_user),  # ensure only authenticated users can log out
+):
+    """
+    Clear the auth cookie.
+    """
+    response = JSONResponse(content={"message": "logout successful"})
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+    )
+    return response

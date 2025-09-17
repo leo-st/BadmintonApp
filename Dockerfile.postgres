@@ -1,0 +1,23 @@
+FROM postgres:16-bullseye
+
+# Install required packages
+RUN apt-get update \
+    && apt-get -y install netcat git build-essential postgresql-server-dev-16 pgagent iputils-ping telnet \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up user
+RUN userdel postgres
+RUN groupadd -g 1000 postgres
+RUN useradd -m -u 1000 -g 1000 postgres
+
+ENV HOME=/home/db
+
+# Use default PGDATA; let Docker mount volume to /var/lib/postgresql/data
+# Copy SQL init scripts
+COPY db/postgres/init/000_create_schema.sql /docker-entrypoint-initdb.d/000_create_schema.sql
+COPY db/postgres/init/001_create_tables.sql /docker-entrypoint-initdb.d/001_create_tables.sql
+COPY db/postgres/init/002_load_sample_data.sql /docker-entrypoint-initdb.d/002_load_sample_data.sql
+
+# Let base image entrypoint handle startup
+CMD ["postgres"]
