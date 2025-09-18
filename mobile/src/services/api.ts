@@ -1,5 +1,5 @@
 // API service for Badminton App
-import { User, UserLogin, UserCreate, Match, MatchCreate, MatchVerification, Tournament, TournamentCreate } from '../types';
+import { User, UserLogin, UserCreate, Match, MatchCreate, MatchVerification, Tournament, TournamentCreate, TournamentStats, TournamentLeaderboard } from '../types';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -25,11 +25,27 @@ class ApiService {
       ...options,
     };
 
+    // Debug logging
+    console.log('API Request:', {
+      url,
+      method: config.method || 'GET',
+      headers: config.headers,
+      body: config.body,
+    });
+
     try {
       const response = await fetch(url, config);
       
+      console.log('API Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+      });
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
 
       return await response.json();
@@ -61,12 +77,36 @@ class ApiService {
   }
 
   // User endpoints
+  async getCurrentUser(): Promise<User> {
+    return this.request('/users/me');
+  }
+
   async getUsers(): Promise<User[]> {
     return this.request('/users');
   }
 
   async getUser(id: number): Promise<User> {
     return this.request(`/users/${id}`);
+  }
+
+  async createUser(userData: UserCreate): Promise<User> {
+    return this.request('/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User> {
+    return this.request(`/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async deleteUser(id: number): Promise<{ message: string }> {
+    return this.request(`/users/${id}`, {
+      method: 'DELETE',
+    });
   }
 
   // Match endpoints
@@ -88,16 +128,59 @@ class ApiService {
     });
   }
 
-  // Tournament endpoints
-  async getTournaments(): Promise<Tournament[]> {
-    return this.request('/tournaments');
+  async getPendingVerifications(): Promise<Match[]> {
+    return this.request('/verification/pending-verification');
   }
 
-  async createTournament(tournamentData: TournamentCreate): Promise<Tournament> {
+  async getVerificationStatus(matchId: number): Promise<any> {
+    return this.request(`/matches/${matchId}/verification-status`);
+  }
+
+  // Tournament endpoints
+  async getTournaments(activeOnly: boolean = true): Promise<Tournament[]> {
+    if (activeOnly) {
+      return this.request(`/tournaments?active_only=${activeOnly}`);
+    } else {
+      return this.request('/tournaments/public');
+    }
+  }
+
+  async createTournament(tournament: TournamentCreate): Promise<Tournament> {
     return this.request('/tournaments', {
       method: 'POST',
-      body: JSON.stringify(tournamentData),
+      body: JSON.stringify(tournament),
     });
+  }
+
+  async updateTournament(tournamentId: number, tournament: TournamentCreate): Promise<Tournament> {
+    return this.request(`/tournaments/${tournamentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(tournament),
+    });
+  }
+
+  async deleteTournament(tournamentId: number): Promise<{message: string}> {
+    return this.request(`/tournaments/${tournamentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async deactivateTournament(tournamentId: number): Promise<{message: string}> {
+    return this.request(`/tournaments/${tournamentId}/deactivate`, {
+      method: 'POST',
+    });
+  }
+
+  async getTournamentStats(tournamentId: number): Promise<TournamentStats> {
+    return this.request(`/tournaments/${tournamentId}/stats`);
+  }
+
+  async getPublicTournaments(): Promise<Tournament[]> {
+    return this.request('/tournaments/public');
+  }
+
+  async getTournamentLeaderboard(tournamentId: number): Promise<TournamentLeaderboard> {
+    return this.request(`/tournaments/${tournamentId}/leaderboard`);
   }
 
   // Health check

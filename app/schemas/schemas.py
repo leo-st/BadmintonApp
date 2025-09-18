@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Dict
 
 from pydantic import BaseModel, EmailStr
 
@@ -15,10 +15,26 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    is_active: Optional[bool] = None
+    role_id: Optional[int] = None
+
+class UserMedalCounts(BaseModel):
+    gold: int = 0
+    silver: int = 0
+    bronze: int = 0
+    wood: int = 0
+
 class UserResponse(UserBase):
     id: int
     is_active: bool
     created_at: datetime
+    role_id: Optional[int] = None
+    permissions: Optional[List[str]] = None
+    medals: Optional[UserMedalCounts] = None
 
     class Config:
         from_attributes = True
@@ -48,6 +64,14 @@ class MatchResponse(MatchBase):
     match_date: datetime
     created_at: datetime
     verified_at: Optional[datetime]
+    player1_verified: bool
+    player2_verified: bool
+    player1_verified_by_id: Optional[int]
+    player2_verified_by_id: Optional[int]
+    # Player relationship fields
+    player1: Optional[UserResponse] = None
+    player2: Optional[UserResponse] = None
+    submitted_by: Optional[UserResponse] = None
 
     class Config:
         from_attributes = True
@@ -81,3 +105,73 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+# Permission system schemas
+class RoleBase(BaseModel):
+    role_name: str
+    locked: bool = True
+
+class RoleCreate(RoleBase):
+    pass
+
+class RoleUpdate(BaseModel):
+    role_name: Optional[str] = None
+    locked: Optional[bool] = None
+
+class RoleResponse(RoleBase):
+    role_id: int
+
+    class Config:
+        from_attributes = True
+
+class PermissionGroupBase(BaseModel):
+    permission_group_name: str
+
+class PermissionGroupCreate(PermissionGroupBase):
+    pass
+
+class PermissionGroupResponse(PermissionGroupBase):
+    permission_group_id: int
+
+    class Config:
+        from_attributes = True
+
+class PermissionBase(BaseModel):
+    permission_key: str
+    permission_group_id: Optional[int] = None
+
+class PermissionCreate(PermissionBase):
+    pass
+
+class PermissionResponse(PermissionBase):
+    permission_id: int
+
+    class Config:
+        from_attributes = True
+
+class UserPermissionResponse(BaseModel):
+    user_id: int
+    username: str
+    role_id: Optional[int]
+    role_name: Optional[str]
+    permissions: List[str]
+
+    class Config:
+        from_attributes = True
+
+# Medal schemas
+class MedalBase(BaseModel):
+    user_id: int
+    tournament_id: int
+    position: int
+    medal_type: str
+
+class MedalCreate(MedalBase):
+    pass
+
+class MedalResponse(MedalBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

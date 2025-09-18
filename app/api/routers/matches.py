@@ -6,6 +6,7 @@ from typing import Optional
 
 from app.core.auth import get_current_active_user
 from app.core.database import get_db
+from app.core.authorize import authorize
 from app.models.models import Match, User
 from app.schemas.schemas import MatchCreate, MatchResponse, MatchVerification
 from app.common.enums import MatchStatus, MatchType
@@ -18,6 +19,7 @@ def create_match(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    authorize(current_user, db, ["matches_can_create"])
     # Verify both players exist
     player1 = db.query(User).filter(User.id == match.player1_id).first()
     player2 = db.query(User).filter(User.id == match.player2_id).first()
@@ -44,8 +46,10 @@ def read_matches(
     limit: int = 100,
     match_type: Optional[str] = Query(None, description="Filter by match type: casual or tournament"),
     status: Optional[str] = Query(None, description="Filter by status: pending_verification, verified, or rejected"),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    authorize(current_user, db, ["matches_can_view_all"])
     query = db.query(Match)
 
     # Only filter if match_type is provided and not empty
@@ -83,33 +87,24 @@ def verify_match(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
+    authorize(current_user, db, ["matches_can_verify"])
     match = db.query(Match).filter(Match.id == match_id).first()
     if not match:
         raise HTTPException(status_code=404, detail="Match not found")
 
-    # Check if user is one of the players
-    if current_user.id not in [match.player1_id, match.player2_id]:
+    # Check if user can verify this match
+    if not match.can_user_verify(current_user.id):
         raise HTTPException(
             status_code=403,
-            detail="Only match players can verify matches"
+            detail="You cannot verify this match"
         )
 
-    # Check if match is already verified
-    if match.status != MatchStatus.PENDING_VERIFICATION:
+    # Verify the match
+    if not match.verify_by_user(current_user.id, verification.verified):
         raise HTTPException(
             status_code=400,
-            detail="Match is already verified or rejected"
+            detail="Failed to verify match"
         )
-
-    # Update match status
-    if verification.verified:
-        match.status = MatchStatus.VERIFIED
-        match.verified_by_id = current_user.id
-        match.verified_at = db.query(func.now()).scalar()
-    else:
-        match.status = MatchStatus.REJECTED
-        match.verified_by_id = current_user.id
-        match.verified_at = db.query(func.now()).scalar()
 
     if verification.notes:
         match.notes = verification.notes
@@ -117,3 +112,29 @@ def verify_match(
     db.commit()
     db.refresh(match)
     return match
+
+@router.get("/{match_id}/verification-status", response_model=dict)
+def get_verification_status(
+    match_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get verification status and requirements for a match"""
+    authorize(current_user, db, ["matches_can_view_all"])
+    
+    match = db.query(Match).filter(Match.id == match_id).first()
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+    
+    requirements = match.get_verification_requirements()
+    
+    return {
+        "match_id": match.id,
+        "player1_verified": match.player1_verified,
+        "player2_verified": match.player2_verified,
+        "player1_needs_verification": requirements["player1_needs_verification"],
+        "player2_needs_verification": requirements["player2_needs_verification"],
+        "submitted_by_player": requirements["submitted_by_player"],
+        "is_fully_verified": match.is_fully_verified(),
+        "can_current_user_verify": match.can_user_verify(current_user.id)
+    }

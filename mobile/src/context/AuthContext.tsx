@@ -19,11 +19,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      // For now, we'll just set loading to false
-      // In a real app, you'd check for stored tokens or make a request to verify auth
-      setIsLoading(false);
+      // Try to get current user with permissions
+      const userData = await apiService.getCurrentUser();
+      setUser(userData);
     } catch (error) {
       console.error('Auth check failed:', error);
+      setUser(null);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -35,23 +37,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Backend returns {message: "login successful"} and sets cookie
       if (response.message === 'login successful') {
-        // Fetch user data after successful login
-        try {
-          const userData = await apiService.getUser(1); // You might need to adjust this
-          setUser(userData);
-        } catch (userError) {
-          // If we can't fetch user data, create a mock user
-          console.log('Could not fetch user data, using mock user');
-          const mockUser: User = {
-            id: 1,
-            username,
-            email: `${username}@example.com`,
-            full_name: username.charAt(0).toUpperCase() + username.slice(1),
-            is_active: true,
-            created_at: new Date().toISOString(),
-          };
-          setUser(mockUser);
-        }
+        // Fetch user data with permissions
+        const userData = await apiService.getCurrentUser();
+        setUser(userData);
         return true;
       }
       return false;
@@ -61,6 +49,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const hasPermission = (permission: string): boolean => {
+    if (!user || !user.permissions) {
+      return false;
+    }
+    return user.permissions.includes(permission);
+  };
+
+  const isAdmin = (): boolean => {
+    return user?.role_id === 1;
   };
 
   const logout = async () => {
@@ -78,6 +77,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     isLoading,
+    hasPermission,
+    isAdmin,
   };
 
   return (

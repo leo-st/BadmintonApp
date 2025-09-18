@@ -35,6 +35,14 @@
       "eas": {
         "projectId": "badminton-app-mobile"
       }
+    },
+    "developmentClient": {
+      "silentLaunch": true
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }

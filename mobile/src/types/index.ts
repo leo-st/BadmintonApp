@@ -7,6 +7,17 @@ export interface User {
   full_name: string;
   is_active: boolean;
   created_at: string;
+  role_id?: number;
+  role_name?: string;
+  permissions?: string[];
+  medals?: UserMedalCounts;
+}
+
+export interface UserMedalCounts {
+  gold: number;
+  silver: number;
+  bronze: number;
+  wood: number;
 }
 
 export interface UserLogin {
@@ -27,8 +38,8 @@ export interface Match {
   player2_id: number;
   player1_score: number;
   player2_score: number;
-  match_type: 'SINGLES' | 'DOUBLES';
-  status: 'PENDING_VERIFICATION' | 'VERIFIED' | 'REJECTED';
+  match_type: 'casual' | 'tournament';
+  status: 'pending_verification' | 'verified' | 'rejected';
   submitted_by_id: number;
   verified_by_id?: number;
   tournament_id?: number;
@@ -36,6 +47,10 @@ export interface Match {
   match_date: string;
   created_at: string;
   verified_at?: string;
+  player1_verified: boolean;
+  player2_verified: boolean;
+  player1_verified_by_id?: number;
+  player2_verified_by_id?: number;
   // Populated fields
   player1?: User;
   player2?: User;
@@ -48,7 +63,7 @@ export interface MatchCreate {
   player2_id: number;
   player1_score: number;
   player2_score: number;
-  match_type: 'SINGLES' | 'DOUBLES';
+  match_type: 'casual' | 'tournament';
   notes?: string;
   tournament_id?: number;
 }
@@ -75,11 +90,57 @@ export interface TournamentCreate {
   end_date?: string;
 }
 
+export interface TournamentStats {
+  tournament: {
+    id: number;
+    name: string;
+    is_active: boolean;
+    total_matches: number;
+  };
+  standings: PlayerStanding[];
+}
+
+export interface PlayerStanding {
+  player_id: number;
+  player_name: string;
+  matches_played: number;
+  matches_won: number;
+  matches_lost: number;
+  sets_won: number;
+  sets_lost: number;
+  points_won: number;
+  points_lost: number;
+  win_percentage: number;
+}
+
+export interface PlayerLeaderboard {
+  player_id: number;
+  player_name: string;
+  sets_won: number;
+  sets_lost: number;
+  sets_delta: number;
+  points_won: number;
+  points_lost: number;
+  points_delta: number;
+}
+
+export interface TournamentLeaderboard {
+  tournament: {
+    id: number;
+    name: string;
+    is_active: boolean;
+    total_matches: number;
+  };
+  leaderboard: PlayerLeaderboard[];
+}
+
 export interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
+  hasPermission: (permission: string) => boolean;
+  isAdmin: () => boolean;
 }
 
 export interface ApiResponse<T> {
