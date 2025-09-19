@@ -183,6 +183,44 @@ class ApiService {
     return this.request(`/tournaments/${tournamentId}/leaderboard`);
   }
 
+  // Tournament invitation methods
+  async inviteUserToTournament(tournamentId: number, userId: number): Promise<TournamentInvitation> {
+    return this.request(`/tournament-invitations/tournament/${tournamentId}/invite/${userId}`, {
+      method: 'POST',
+    });
+  }
+
+  async respondToInvitation(invitationId: number, status: string): Promise<TournamentInvitation> {
+    return this.request(`/tournament-invitations/${invitationId}/respond`, {
+      method: 'POST',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  async getTournamentInvitations(tournamentId: number): Promise<TournamentInvitation[]> {
+    return this.request(`/tournament-invitations/tournament/${tournamentId}`);
+  }
+
+  async getMyInvitations(): Promise<TournamentInvitation[]> {
+    return this.request('/tournament-invitations/my-invitations');
+  }
+
+  async getTournamentParticipants(tournamentId: number): Promise<TournamentParticipant[]> {
+    return this.request(`/tournament-invitations/tournament/${tournamentId}/participants`);
+  }
+
+  async startTournament(tournamentId: number): Promise<{ message: string; tournament_id: number }> {
+    return this.request(`/tournament-invitations/tournament/${tournamentId}/start`, {
+      method: 'POST',
+    });
+  }
+
+  async completeTournament(tournamentId: number): Promise<{ message: string; tournament_id: number }> {
+    return this.request(`/tournament-invitations/tournament/${tournamentId}/complete`, {
+      method: 'POST',
+    });
+  }
+
   // Health check
   async healthCheck(): Promise<{ status: string }> {
     return this.request('/health');

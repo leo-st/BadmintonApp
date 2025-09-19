@@ -30,12 +30,61 @@ def create_match(
     if player1.id == player2.id:
         raise HTTPException(status_code=400, detail="Player cannot play against themselves")
 
+    # If this is a tournament match, verify both players are tournament participants
+    if match.tournament_id:
+        from app.models.tournament_invitations import TournamentParticipant
+        from app.models.models import Tournament
+        
+        # Check if tournament exists and is active
+        tournament = db.query(Tournament).filter(Tournament.id == match.tournament_id).first()
+        if not tournament:
+            raise HTTPException(status_code=400, detail="Tournament not found")
+        
+        if tournament.status != "active":
+            raise HTTPException(status_code=400, detail="Cannot create matches for inactive tournaments")
+        
+        # Check if both players are tournament participants
+        player1_participant = db.query(TournamentParticipant).filter(
+            TournamentParticipant.tournament_id == match.tournament_id,
+            TournamentParticipant.user_id == match.player1_id,
+            TournamentParticipant.is_active == True
+        ).first()
+        
+        player2_participant = db.query(TournamentParticipant).filter(
+            TournamentParticipant.tournament_id == match.tournament_id,
+            TournamentParticipant.user_id == match.player2_id,
+            TournamentParticipant.is_active == True
+        ).first()
+        
+        if not player1_participant:
+            raise HTTPException(status_code=400, detail=f"Player {player1.full_name} is not a participant in this tournament")
+        
+        if not player2_participant:
+            raise HTTPException(status_code=400, detail=f"Player {player2.full_name} is not a participant in this tournament")
+
     # Create match
     db_match = Match(
         **match.dict(),
         submitted_by_id=current_user.id
     )
     db.add(db_match)
+    db.commit()
+    db.refresh(db_match)
+    
+    # Auto-verify for the submitter if they are one of the players
+    if db_match.submitted_by_id == db_match.player1_id:
+        db_match.player1_verified = True
+        db_match.player1_verified_by_id = db_match.submitted_by_id
+    elif db_match.submitted_by_id == db_match.player2_id:
+        db_match.player2_verified = True
+        db_match.player2_verified_by_id = db_match.submitted_by_id
+    
+    # Check if match is now fully verified
+    if db_match.is_fully_verified():
+        db_match.status = MatchStatus.VERIFIED
+        db_match.verified_at = func.now()
+        db_match.verified_by_id = db_match.submitted_by_id
+    
     db.commit()
     db.refresh(db_match)
     return db_match

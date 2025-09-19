@@ -30,10 +30,21 @@ export const TournamentLeaderboardScreen: React.FC = () => {
     try {
       setLoading(true);
       const data = await apiService.getPublicTournaments();
-      setTournaments(data);
-      if (data.length > 0) {
-        setSelectedTournament(data[0]);
-        loadLeaderboard(data[0].id);
+      
+      // Sort tournaments: active first, then finished, and by creation date (most recent first)
+      const sortedTournaments = data.sort((a, b) => {
+        // First sort by status: active tournaments first
+        if (a.is_active && !b.is_active) return -1;
+        if (!a.is_active && b.is_active) return 1;
+        
+        // Then sort by creation date (most recent first)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      setTournaments(sortedTournaments);
+      if (sortedTournaments.length > 0) {
+        setSelectedTournament(sortedTournaments[0]);
+        loadLeaderboard(sortedTournaments[0].id);
       }
     } catch (error) {
       console.error('Failed to load tournaments:', error);
@@ -99,7 +110,7 @@ export const TournamentLeaderboardScreen: React.FC = () => {
                   selectedTournament?.id === tournament.id && styles.tournamentButtonTextActive,
                 ]}
               >
-                🏆 {tournament.name}
+                {tournament.is_active ? '🏆' : '🏁'} {tournament.name}
               </Text>
               <View style={[
                 styles.statusBadge,

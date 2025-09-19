@@ -15,15 +15,18 @@ export const HomeScreen: React.FC = () => {
   const { user, logout, hasPermission, isAdmin } = useAuth();
   const navigation = useNavigation();
   const [pendingVerifications, setPendingVerifications] = useState(0);
+  const [pendingInvitations, setPendingInvitations] = useState(0);
 
 
   useEffect(() => {
     loadPendingVerifications();
+    loadPendingInvitations();
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
       loadPendingVerifications();
+      loadPendingInvitations();
     }, [])
   );
 
@@ -35,6 +38,19 @@ export const HomeScreen: React.FC = () => {
       } catch (error) {
         console.error('Failed to load pending verifications:', error);
       }
+    }
+  };
+
+  const loadPendingInvitations = async () => {
+    try {
+      const invitations = await apiService.getMyInvitations();
+      const pending = invitations.filter(inv => 
+        inv.status === 'pending' && new Date(inv.expires_at) > new Date()
+      );
+      setPendingInvitations(pending.length);
+    } catch (error) {
+      console.error('Failed to load pending invitations:', error);
+      setPendingInvitations(0);
     }
   };
 
@@ -116,6 +132,16 @@ export const HomeScreen: React.FC = () => {
             >
               <Text style={[styles.actionButtonText, pendingVerifications > 0 && styles.urgentButtonText]}>
                 🔍 Verify Matches {pendingVerifications > 0 && `(${pendingVerifications})`}
+              </Text>
+            </TouchableOpacity>
+          )}
+          {pendingInvitations > 0 && (
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.urgentButton]}
+              onPress={() => navigation.navigate('MyInvitations' as never)}
+            >
+              <Text style={[styles.actionButtonText, styles.urgentButtonText]}>
+                📬 Tournament Invitations ({pendingInvitations})
               </Text>
             </TouchableOpacity>
           )}

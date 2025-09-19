@@ -3,7 +3,7 @@ from typing import Optional, List, Dict
 
 from pydantic import BaseModel, EmailStr
 
-from app.common.enums import MatchStatus, MatchType
+from app.common.enums import MatchStatus, MatchType, TournamentStatus, InvitationStatus
 
 
 # User schemas
@@ -93,7 +93,10 @@ class TournamentCreate(TournamentBase):
 class TournamentResponse(TournamentBase):
     id: int
     is_active: bool
+    status: str
     created_at: datetime
+    participant_count: Optional[int] = None
+    invitation_count: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -175,3 +178,44 @@ class MedalResponse(MedalBase):
 
     class Config:
         from_attributes = True
+
+# Tournament invitation schemas
+class TournamentParticipantBase(BaseModel):
+    tournament_id: int
+    user_id: int
+
+class TournamentParticipantCreate(TournamentParticipantBase):
+    pass
+
+class TournamentParticipantResponse(TournamentParticipantBase):
+    id: int
+    joined_at: datetime
+    is_active: bool
+    user: Optional[UserResponse] = None
+
+    class Config:
+        from_attributes = True
+
+class TournamentInvitationBase(BaseModel):
+    tournament_id: int
+    user_id: int
+
+class TournamentInvitationCreate(TournamentInvitationBase):
+    pass
+
+class TournamentInvitationResponse(TournamentInvitationBase):
+    id: int
+    invited_by: int
+    status: str
+    invited_at: datetime
+    responded_at: Optional[datetime] = None
+    expires_at: datetime
+    user: Optional[UserResponse] = None
+    inviter: Optional[UserResponse] = None
+    tournament: Optional[TournamentResponse] = None
+
+    class Config:
+        from_attributes = True
+
+class TournamentInvitationUpdate(BaseModel):
+    status: str

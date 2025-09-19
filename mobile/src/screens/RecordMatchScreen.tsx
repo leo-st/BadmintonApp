@@ -17,9 +17,11 @@ export const RecordMatchScreen: React.FC = () => {
   const navigation = useNavigation();
   const [users, setUsers] = useState<User[]>([]);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [tournamentParticipants, setTournamentParticipants] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [isLoadingTournaments, setIsLoadingTournaments] = useState(true);
+  const [isLoadingParticipants, setIsLoadingParticipants] = useState(false);
 
   // Form state
   const [player1Id, setPlayer1Id] = useState<number | null>(null);
@@ -58,6 +60,21 @@ export const RecordMatchScreen: React.FC = () => {
       Alert.alert('Error', 'Failed to load tournaments. Please try again.');
     } finally {
       setIsLoadingTournaments(false);
+    }
+  };
+
+  const loadTournamentParticipants = async (tournamentId: number) => {
+    try {
+      setIsLoadingParticipants(true);
+      const participants = await apiService.getTournamentParticipants(tournamentId);
+      // Extract users from participants
+      const participantUsers = participants.map(p => p.user).filter(Boolean) as User[];
+      setTournamentParticipants(participantUsers);
+    } catch (error) {
+      console.error('Failed to load tournament participants:', error);
+      Alert.alert('Error', 'Failed to load tournament participants. Please try again.');
+    } finally {
+      setIsLoadingParticipants(false);
     }
   };
 
@@ -166,7 +183,12 @@ export const RecordMatchScreen: React.FC = () => {
                   styles.matchTypeButton,
                   matchType === 'casual' && styles.matchTypeButtonActive,
                 ]}
-                onPress={() => setMatchType('casual')}
+                onPress={() => {
+                  setMatchType('casual');
+                  setTournamentId(null);
+                  setPlayer1Id(null);
+                  setPlayer2Id(null);
+                }}
               >
                 <Text
                   style={[
@@ -217,7 +239,13 @@ export const RecordMatchScreen: React.FC = () => {
                           styles.tournamentButton,
                           tournamentId === tournament.id && styles.tournamentButtonActive,
                         ]}
-                        onPress={() => setTournamentId(tournament.id)}
+                        onPress={() => {
+                          setTournamentId(tournament.id);
+                          loadTournamentParticipants(tournament.id);
+                          // Reset player selections when tournament changes
+                          setPlayer1Id(null);
+                          setPlayer2Id(null);
+                        }}
                       >
                         <Text
                           style={[
@@ -241,56 +269,70 @@ export const RecordMatchScreen: React.FC = () => {
             
             <View style={styles.playerSelection}>
               <Text style={styles.playerLabel}>Player 1</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.playerList}>
-                  {users.map((user) => (
-                    <TouchableOpacity
-                      key={user.id}
-                      style={[
-                        styles.playerButton,
-                        player1Id === user.id && styles.playerButtonActive,
-                      ]}
-                      onPress={() => setPlayer1Id(user.id)}
-                    >
-                      <Text
-                        style={[
-                          styles.playerButtonText,
-                          player1Id === user.id && styles.playerButtonTextActive,
-                        ]}
-                      >
-                        {user.full_name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+              {matchType === 'tournament' && tournamentId && isLoadingParticipants ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                  <Text style={styles.loadingText}>Loading participants...</Text>
                 </View>
-              </ScrollView>
+              ) : (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View style={styles.playerList}>
+                    {(matchType === 'tournament' && tournamentId ? tournamentParticipants : users).map((user) => (
+                      <TouchableOpacity
+                        key={user.id}
+                        style={[
+                          styles.playerButton,
+                          player1Id === user.id && styles.playerButtonActive,
+                        ]}
+                        onPress={() => setPlayer1Id(user.id)}
+                      >
+                        <Text
+                          style={[
+                            styles.playerButtonText,
+                            player1Id === user.id && styles.playerButtonTextActive,
+                          ]}
+                        >
+                          {user.full_name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+              )}
             </View>
 
             <View style={styles.playerSelection}>
               <Text style={styles.playerLabel}>Player 2</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.playerList}>
-                  {users.map((user) => (
-                    <TouchableOpacity
-                      key={user.id}
-                      style={[
-                        styles.playerButton,
-                        player2Id === user.id && styles.playerButtonActive,
-                      ]}
-                      onPress={() => setPlayer2Id(user.id)}
-                    >
-                      <Text
-                        style={[
-                          styles.playerButtonText,
-                          player2Id === user.id && styles.playerButtonTextActive,
-                        ]}
-                      >
-                        {user.full_name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+              {matchType === 'tournament' && tournamentId && isLoadingParticipants ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                  <Text style={styles.loadingText}>Loading participants...</Text>
                 </View>
-              </ScrollView>
+              ) : (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View style={styles.playerList}>
+                    {(matchType === 'tournament' && tournamentId ? tournamentParticipants : users).map((user) => (
+                      <TouchableOpacity
+                        key={user.id}
+                        style={[
+                          styles.playerButton,
+                          player2Id === user.id && styles.playerButtonActive,
+                        ]}
+                        onPress={() => setPlayer2Id(user.id)}
+                      >
+                        <Text
+                          style={[
+                            styles.playerButtonText,
+                            player2Id === user.id && styles.playerButtonTextActive,
+                          ]}
+                        >
+                          {user.full_name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+              )}
             </View>
           </View>
 

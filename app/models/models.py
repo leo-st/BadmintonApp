@@ -11,11 +11,12 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, Session
 from sqlalchemy.sql import func
 
-from app.common.enums import MatchStatus, MatchType
+from app.common.enums import MatchStatus, MatchType, TournamentStatus
 from app.core.database import Base
 
 # Import Medal to ensure it's registered with SQLAlchemy
 from app.models.medals import Medal
+from app.models.tournament_invitations import TournamentParticipant, TournamentInvitation
 
 
 class User(Base):
@@ -40,6 +41,9 @@ class User(Base):
     player2_verified_matches = relationship("Match", foreign_keys="Match.player2_verified_by_id", back_populates="player2_verified_by")
     role = relationship("Role", foreign_keys=[role_id], lazy="joined")
     medals = relationship("Medal", back_populates="user", lazy="select")
+    tournament_participations = relationship("TournamentParticipant", back_populates="user", lazy="select")
+    tournament_invitations_received = relationship("TournamentInvitation", foreign_keys="TournamentInvitation.user_id", back_populates="user", lazy="select")
+    tournament_invitations_sent = relationship("TournamentInvitation", foreign_keys="TournamentInvitation.invited_by", back_populates="inviter", lazy="select")
 
     @staticmethod
     def authenticate(db: Session, username: str, password: str):
@@ -202,8 +206,11 @@ class Tournament(Base):
     start_date = Column(DateTime(timezone=True), nullable=False)
     end_date = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True)
+    status = Column(String(20), nullable=False, default=TournamentStatus.DRAFT.value)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     matches = relationship("Match", back_populates="tournament")
     medals = relationship("Medal", back_populates="tournament", lazy="select")
+    participants = relationship("TournamentParticipant", back_populates="tournament", lazy="select")
+    invitations = relationship("TournamentInvitation", back_populates="tournament", lazy="select")

@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { Tournament, TournamentCreate, TournamentStats } from '../types';
+import { TournamentInvitationScreen } from './TournamentInvitationScreen';
 
 export const TournamentScreen: React.FC = () => {
   const { user, hasPermission } = useAuth();
@@ -23,6 +24,8 @@ export const TournamentScreen: React.FC = () => {
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [tournamentStats, setTournamentStats] = useState<TournamentStats | null>(null);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showInvitationModal, setShowInvitationModal] = useState(false);
+  const [selectedTournamentForInvitations, setSelectedTournamentForInvitations] = useState<Tournament | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -49,8 +52,13 @@ export const TournamentScreen: React.FC = () => {
     }
   };
 
-  const activeTournaments = tournaments.filter(t => t.is_active);
-  const finishedTournaments = tournaments.filter(t => !t.is_active);
+  const activeTournaments = tournaments
+    .filter(t => t.is_active)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  
+  const finishedTournaments = tournaments
+    .filter(t => !t.is_active)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -148,6 +156,17 @@ export const TournamentScreen: React.FC = () => {
     }
   };
 
+  const handleManageInvitations = (tournament: Tournament) => {
+    setSelectedTournamentForInvitations(tournament);
+    setShowInvitationModal(true);
+  };
+
+  const handleCloseInvitationModal = () => {
+    setShowInvitationModal(false);
+    setSelectedTournamentForInvitations(null);
+    loadTournaments(); // Refresh tournaments to update status
+  };
+
   const renderTournament = (tournament: Tournament) => (
     <View key={tournament.id} style={styles.tournamentCard}>
       <View style={styles.tournamentHeader}>
@@ -182,6 +201,15 @@ export const TournamentScreen: React.FC = () => {
         >
           <Text style={styles.actionButtonText}>📊 Stats</Text>
         </TouchableOpacity>
+        
+        {(tournament.status === 'inviting' || tournament.status === 'active') && hasPermission('tournaments_can_edit_all') && (
+          <TouchableOpacity
+            style={[styles.actionButton, styles.inviteButton]}
+            onPress={() => handleManageInvitations(tournament)}
+          >
+            <Text style={styles.actionButtonText}>📬 Invitations</Text>
+          </TouchableOpacity>
+        )}
         
         {tournament.is_active && (
           <TouchableOpacity
@@ -377,6 +405,13 @@ export const TournamentScreen: React.FC = () => {
       </Modal>
 
       {renderStatsModal()}
+      
+      {selectedTournamentForInvitations && (
+        <TournamentInvitationScreen
+          tournament={selectedTournamentForInvitations}
+          onClose={handleCloseInvitationModal}
+        />
+      )}
     </View>
   );
 };
@@ -506,6 +541,9 @@ const styles = StyleSheet.create({
   },
   statsButton: {
     backgroundColor: '#007AFF',
+  },
+  inviteButton: {
+    backgroundColor: '#34C759',
   },
   deactivateButton: {
     backgroundColor: '#FF9500',

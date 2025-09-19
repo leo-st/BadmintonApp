@@ -12,6 +12,7 @@ import { AdminScreen } from './src/screens/AdminScreen';
 import { VerificationScreen } from './src/screens/VerificationScreen';
 import { TournamentScreen } from './src/screens/TournamentScreen';
 import { TournamentLeaderboardScreen } from './src/screens/TournamentLeaderboardScreen';
+import { MyInvitationsScreen } from './src/screens/MyInvitationsScreen';
 
 const Stack = createStackNavigator();
 
@@ -35,6 +36,7 @@ function AppContent() {
             <Stack.Screen name="Verification" component={VerificationScreen} />
             <Stack.Screen name="Tournament" component={TournamentScreen} />
             <Stack.Screen name="TournamentLeaderboard" component={TournamentLeaderboardScreen} />
+            <Stack.Screen name="MyInvitations" component={MyInvitationsScreen} />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />

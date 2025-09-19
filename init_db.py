@@ -11,6 +11,7 @@ from app.core.database import SessionLocal, engine
 from app.models.models import Base, Match, MatchStatus, MatchType, Tournament, User
 from app.models.access_control import Role, Permission, PermissionGroup, RolesPermissions
 from app.models.medals import Medal
+from app.models.tournament_invitations import TournamentParticipant, TournamentInvitation
 
 
 def init_db():

@@ -147,3 +147,31 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
 }
+
+// Tournament invitation types
+export interface TournamentParticipant {
+  id: number;
+  tournament_id: number;
+  user_id: number;
+  joined_at: string;
+  is_active: boolean;
+  user?: User;
+}
+
+export interface TournamentInvitation {
+  id: number;
+  tournament_id: number;
+  user_id: number;
+  invited_by: number;
+  status: 'pending' | 'accepted' | 'declined' | 'expired';
+  invited_at: string;
+  responded_at?: string;
+  expires_at: string;
+  user?: User;
+  inviter?: User;
+  tournament?: Tournament;
+}
+
+export interface TournamentInvitationUpdate {
+  status: 'accepted' | 'declined';
+}

@@ -1,6 +1,6 @@
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, case
 from typing import Dict, Any
 
@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.authorize import authorize
 from app.models.models import Tournament, User, Match
 from app.schemas.schemas import TournamentCreate, TournamentResponse
-from app.common.enums import MatchStatus
+from app.common.enums import MatchStatus, TournamentStatus
 
 router = APIRouter(prefix="/tournaments", tags=["tournaments"])
 
@@ -21,6 +21,7 @@ def create_tournament(
 ):
     authorize(current_user, db, ["tournaments_can_create"])
     db_tournament = Tournament(**tournament.dict())
+    db_tournament.status = TournamentStatus.INVITING.value  # Start in inviting status
     db.add(db_tournament)
     db.commit()
     db.refresh(db_tournament)
@@ -201,31 +202,37 @@ def get_tournament_stats(
         "standings": sorted_players
     }
 
-@router.get("/{tournament_id}/leaderboard")
+@router.get("/{tournament_id}/leaderboard", response_model=dict)
 def get_tournament_leaderboard(
     tournament_id: int,
     db: Session = Depends(get_db)
 ):
     """Public endpoint to get tournament leaderboard with detailed statistics"""
-    tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
-    if not tournament:
-        raise HTTPException(status_code=404, detail="Tournament not found")
-    
-    # Get all verified matches for this tournament
-    matches = db.query(Match).filter(
-        Match.tournament_id == tournament_id,
-        Match.status == MatchStatus.VERIFIED
-    ).all()
-    
-    # Calculate player statistics with detailed breakdown
-    player_stats = {}
-    
-    for match in matches:
-        # Process player1
-        if match.player1_id not in player_stats:
-            player_stats[match.player1_id] = {
-                "player_id": match.player1_id,
-                "player_name": match.player1.full_name if match.player1 else f"Player {match.player1_id}",
+    try:
+        tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
+        if not tournament:
+            raise HTTPException(status_code=404, detail="Tournament not found")
+        
+        # Get all tournament participants
+        from app.models.tournament_invitations import TournamentParticipant
+        participants = db.query(TournamentParticipant).filter(
+            TournamentParticipant.tournament_id == tournament_id,
+            TournamentParticipant.is_active == True
+        ).all()
+        
+        # Get all verified matches for this tournament
+        matches = db.query(Match).filter(
+            Match.tournament_id == tournament_id,
+            Match.status == MatchStatus.VERIFIED
+        ).all()
+        
+        # Initialize all participants with 0 stats
+        player_stats = {}
+        for participant in participants:
+            user = db.query(User).filter(User.id == participant.user_id).first()
+            player_stats[participant.user_id] = {
+                "player_id": participant.user_id,
+                "player_name": user.full_name if user else f"Player {participant.user_id}",
                 "sets_won": 0,
                 "sets_lost": 0,
                 "sets_delta": 0,
@@ -234,55 +241,47 @@ def get_tournament_leaderboard(
                 "points_delta": 0,
             }
         
-        # Process player2
-        if match.player2_id not in player_stats:
-            player_stats[match.player2_id] = {
-                "player_id": match.player2_id,
-                "player_name": match.player2.full_name if match.player2 else f"Player {match.player2_id}",
-                "sets_won": 0,
-                "sets_lost": 0,
-                "sets_delta": 0,
-                "points_won": 0,
-                "points_lost": 0,
-                "points_delta": 0,
-            }
+        # Calculate statistics from verified matches
+        for match in matches:
+            # Update player1 stats
+            if match.player1_id in player_stats:
+                player1_stats = player_stats[match.player1_id]
+                player1_stats["points_won"] += match.player1_score
+                player1_stats["points_lost"] += match.player2_score
+                player1_stats["sets_won"] += 1 if match.player1_score > match.player2_score else 0
+                player1_stats["sets_lost"] += 1 if match.player1_score < match.player2_score else 0
+            
+            # Update player2 stats
+            if match.player2_id in player_stats:
+                player2_stats = player_stats[match.player2_id]
+                player2_stats["points_won"] += match.player2_score
+                player2_stats["points_lost"] += match.player1_score
+                player2_stats["sets_won"] += 1 if match.player2_score > match.player1_score else 0
+                player2_stats["sets_lost"] += 1 if match.player2_score < match.player1_score else 0
         
-        # Update player1 stats
-        player1_stats = player_stats[match.player1_id]
-        player1_stats["points_won"] += match.player1_score
-        player1_stats["points_lost"] += match.player2_score
-        if match.player1_score > match.player2_score:
-            player1_stats["sets_won"] += 1
-        else:
-            player1_stats["sets_lost"] += 1
+        # Calculate deltas
+        for player_id, stats in player_stats.items():
+            stats["sets_delta"] = stats["sets_won"] - stats["sets_lost"]
+            stats["points_delta"] = stats["points_won"] - stats["points_lost"]
         
-        # Update player2 stats
-        player2_stats = player_stats[match.player2_id]
-        player2_stats["points_won"] += match.player2_score
-        player2_stats["points_lost"] += match.player1_score
-        if match.player2_score > match.player1_score:
-            player2_stats["sets_won"] += 1
-        else:
-            player2_stats["sets_lost"] += 1
-    
-    # Calculate deltas
-    for player_id, stats in player_stats.items():
-        stats["sets_delta"] = stats["sets_won"] - stats["sets_lost"]
-        stats["points_delta"] = stats["points_won"] - stats["points_lost"]
-    
-    # Sort by sets won (descending), then by sets delta (descending), then by points delta (descending)
-    sorted_players = sorted(
-        player_stats.values(),
-        key=lambda x: (x["sets_won"], x["sets_delta"], x["points_delta"]),
-        reverse=True
-    )
-    
-    return {
-        "tournament": {
-            "id": tournament.id,
-            "name": tournament.name,
-            "is_active": tournament.is_active,
-            "total_matches": len(matches)
-        },
-        "leaderboard": sorted_players
-    }
+        # Sort by sets won (descending), then by points delta (descending)
+        leaderboard = sorted(
+            player_stats.values(),
+            key=lambda x: (x["sets_won"], x["points_delta"]),
+            reverse=True
+        )
+        
+        return {
+            "tournament": {
+                "id": tournament.id,
+                "name": tournament.name,
+                "is_active": tournament.is_active,
+                "total_matches": len(matches)
+            },
+            "leaderboard": leaderboard
+        }
+    except Exception as e:
+        print(f"Error in leaderboard: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
