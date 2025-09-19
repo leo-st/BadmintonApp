@@ -44,6 +44,9 @@ class User(Base):
     tournament_participations = relationship("TournamentParticipant", back_populates="user", lazy="select")
     tournament_invitations_received = relationship("TournamentInvitation", foreign_keys="TournamentInvitation.user_id", back_populates="user", lazy="select")
     tournament_invitations_sent = relationship("TournamentInvitation", foreign_keys="TournamentInvitation.invited_by", back_populates="inviter", lazy="select")
+    reports = relationship("Report", back_populates="created_by", lazy="select")
+    report_reactions = relationship("ReportReaction", back_populates="user", lazy="select")
+    report_views = relationship("ReportView", back_populates="user", lazy="select")
 
     @staticmethod
     def authenticate(db: Session, username: str, password: str):

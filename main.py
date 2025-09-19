@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routers import auth, matches, tournaments, users, permissions, roles, verification, medals, tournament_invitations
+from app.api.routers import auth, matches, tournaments, users, permissions, roles, verification, medals, tournament_invitations, reports
 
 # Create database tables (only in production)
 # Base.metadata.create_all(bind=engine)
@@ -27,6 +27,7 @@ app.include_router(permissions.router)
 app.include_router(roles.router)
 app.include_router(medals.router)
 app.include_router(tournament_invitations.router)
+app.include_router(reports.router)
 
 # Health check
 @app.get("/health")

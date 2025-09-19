@@ -1,5 +1,5 @@
 // API service for Badminton App
-import { User, UserLogin, UserCreate, Match, MatchCreate, MatchVerification, Tournament, TournamentCreate, TournamentStats, TournamentLeaderboard } from '../types';
+import { User, UserLogin, UserCreate, Match, MatchCreate, MatchVerification, Tournament, TournamentCreate, TournamentStats, TournamentLeaderboard, Report, ReportCreate, ReportUpdate, ReportReactionCreate } from '../types';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -224,6 +224,82 @@ class ApiService {
   // Health check
   async healthCheck(): Promise<{ status: string }> {
     return this.request('/health');
+  }
+
+  // Reports API
+  async getReports(params?: {
+    skip?: number;
+    limit?: number;
+    event_date_from?: string;
+    event_date_to?: string;
+    search_text?: string;
+  }): Promise<{ reports: Report[]; pagination: { skip: number; limit: number; total: number; has_more: boolean } }> {
+    const queryParams = new URLSearchParams();
+    if (params?.skip !== undefined) queryParams.append('skip', params.skip.toString());
+    if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
+    if (params?.event_date_from) queryParams.append('event_date_from', params.event_date_from);
+    if (params?.event_date_to) queryParams.append('event_date_to', params.event_date_to);
+    if (params?.search_text) queryParams.append('search_text', params.search_text);
+    
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/reports/?${queryString}` : '/reports/';
+    return this.request(endpoint);
+  }
+
+  async getReport(reportId: number): Promise<Report> {
+    return this.request(`/reports/${reportId}`);
+  }
+
+  async createReport(report: ReportCreate): Promise<Report> {
+    return this.request('/reports/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(report),
+    });
+  }
+
+  async updateReport(reportId: number, report: ReportUpdate): Promise<Report> {
+    return this.request(`/reports/${reportId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(report),
+    });
+  }
+
+  async deleteReport(reportId: number): Promise<{ message: string }> {
+    return this.request(`/reports/${reportId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async addReportReaction(reportId: number, reaction: ReportReactionCreate): Promise<{ id: number; user_id: number; emoji: string; created_at: string }> {
+    return this.request(`/reports/${reportId}/reactions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(reaction),
+    });
+  }
+
+  async removeReportReaction(reportId: number, reactionId: number): Promise<{ message: string }> {
+    return this.request(`/reports/${reportId}/reactions/${reactionId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async markReportSeen(reportId: number): Promise<{ message: string }> {
+    return this.request(`/reports/${reportId}/mark-seen`, {
+      method: 'POST',
+    });
+  }
+
+  async getUnseenReportsCount(): Promise<{ unseen_count: number; total_reports: number; seen_reports: number }> {
+    return this.request('/reports/unseen-count');
   }
 }
 

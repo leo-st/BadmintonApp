@@ -16,17 +16,20 @@ export const HomeScreen: React.FC = () => {
   const navigation = useNavigation();
   const [pendingVerifications, setPendingVerifications] = useState(0);
   const [pendingInvitations, setPendingInvitations] = useState(0);
+  const [unseenReports, setUnseenReports] = useState(0);
 
 
   useEffect(() => {
     loadPendingVerifications();
     loadPendingInvitations();
+    loadUnseenReports();
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
       loadPendingVerifications();
       loadPendingInvitations();
+      loadUnseenReports();
     }, [])
   );
 
@@ -51,6 +54,16 @@ export const HomeScreen: React.FC = () => {
     } catch (error) {
       console.error('Failed to load pending invitations:', error);
       setPendingInvitations(0);
+    }
+  };
+
+  const loadUnseenReports = async () => {
+    try {
+      const response = await apiService.getUnseenReportsCount();
+      setUnseenReports(response.unseen_count);
+    } catch (error) {
+      console.error('Failed to load unseen reports count:', error);
+      setUnseenReports(0);
     }
   };
 
@@ -145,6 +158,14 @@ export const HomeScreen: React.FC = () => {
               </Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity 
+            style={[styles.actionButton, unseenReports > 0 ? styles.urgentButton : { backgroundColor: '#28a745' }]}
+            onPress={() => navigation.navigate('Reports' as never)}
+          >
+            <Text style={[styles.actionButtonText, unseenReports > 0 ? styles.urgentButtonText : { color: 'white' }]}>
+              📝 Reports {unseenReports > 0 && `(${unseenReports})`}
+            </Text>
+          </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.actionButton, { backgroundColor: '#007AFF' }]}
             onPress={() => navigation.navigate('Profile' as never)}

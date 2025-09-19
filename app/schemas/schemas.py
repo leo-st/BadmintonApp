@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List, Dict
 
 from pydantic import BaseModel, EmailStr
@@ -219,3 +219,43 @@ class TournamentInvitationResponse(TournamentInvitationBase):
 
 class TournamentInvitationUpdate(BaseModel):
     status: str
+
+
+# Report schemas
+class ReportBase(BaseModel):
+    event_date: date
+    content: str
+
+class ReportCreate(ReportBase):
+    pass
+
+class ReportUpdate(BaseModel):
+    event_date: Optional[date] = None
+    content: Optional[str] = None
+
+class ReportReactionBase(BaseModel):
+    emoji: str
+
+class ReportReactionCreate(ReportReactionBase):
+    pass
+
+class ReportReactionResponse(ReportReactionBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    user: Optional[UserResponse] = None
+
+    class Config:
+        from_attributes = True
+
+class ReportResponse(ReportBase):
+    id: int
+    created_by_id: int
+    created_at: datetime
+    updated_at: datetime
+    created_by: Optional[UserResponse] = None
+    reactions: List[ReportReactionResponse] = []
+    reaction_counts: Dict[str, int] = {}  # Count of each emoji type
+
+    class Config:
+        from_attributes = True

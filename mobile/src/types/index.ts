@@ -175,3 +175,39 @@ export interface TournamentInvitation {
 export interface TournamentInvitationUpdate {
   status: 'accepted' | 'declined';
 }
+
+// Reports types
+export interface Report {
+  id: number;
+  created_by_id: number;
+  event_date: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  has_seen?: boolean;
+  created_by?: User;
+  reactions?: ReportReaction[];
+  reaction_counts?: { [emoji: string]: number };
+}
+
+export interface ReportCreate {
+  event_date: string;
+  content: string;
+}
+
+export interface ReportUpdate {
+  event_date?: string;
+  content?: string;
+}
+
+export interface ReportReaction {
+  id: number;
+  user_id: number;
+  emoji: string;
+  created_at: string;
+  user?: User;
+}
+
+export interface ReportReactionCreate {
+  emoji: string;
+}
