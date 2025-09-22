@@ -47,6 +47,10 @@ class User(Base):
     reports = relationship("Report", back_populates="created_by", lazy="select")
     report_reactions = relationship("ReportReaction", back_populates="user", lazy="select")
     report_views = relationship("ReportView", back_populates="user", lazy="select")
+    posts = relationship("Post", back_populates="user", lazy="select")
+    comments = relationship("Comment", back_populates="user", lazy="select")
+    post_reactions = relationship("PostReaction", back_populates="user", lazy="select")
+    comment_reactions = relationship("CommentReaction", back_populates="user", lazy="select")
 
     @staticmethod
     def authenticate(db: Session, username: str, password: str):

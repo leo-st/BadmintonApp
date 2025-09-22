@@ -16,6 +16,7 @@ import { MyInvitationsScreen } from './src/screens/MyInvitationsScreen';
 import ReportsScreen from './src/screens/ReportsScreen';
 import CreateReportScreen from './src/screens/CreateReportScreen';
 import ReportDetailScreen from './src/screens/ReportDetailScreen';
+import { PostsScreen } from './src/screens/PostsScreen';
 
 const Stack = createStackNavigator();
 
@@ -43,6 +44,7 @@ function AppContent() {
             <Stack.Screen name="Reports" component={ReportsScreen} />
             <Stack.Screen name="CreateReport" component={CreateReportScreen} />
             <Stack.Screen name="ReportDetail" component={ReportDetailScreen} />
+            <Stack.Screen name="Posts" component={PostsScreen} />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />

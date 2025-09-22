@@ -3,7 +3,7 @@ from typing import Optional, List, Dict
 
 from pydantic import BaseModel, EmailStr
 
-from app.common.enums import MatchStatus, MatchType, TournamentStatus, InvitationStatus
+from app.common.enums import MatchStatus, MatchType, TournamentStatus, InvitationStatus, AttachmentType
 
 
 # User schemas
@@ -259,3 +259,107 @@ class ReportResponse(ReportBase):
 
     class Config:
         from_attributes = True
+
+
+# Post schemas
+class PostBase(BaseModel):
+    content: str
+
+class PostCreate(PostBase):
+    pass
+
+class PostUpdate(BaseModel):
+    content: Optional[str] = None
+
+class AttachmentBase(BaseModel):
+    file_type: AttachmentType
+    file_path: str
+    file_name: str
+    file_size: Optional[int] = None
+    mime_type: Optional[str] = None
+    file_metadata: Optional[Dict] = None
+
+class AttachmentCreate(AttachmentBase):
+    pass
+
+class AttachmentResponse(AttachmentBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class PostReactionBase(BaseModel):
+    emoji: str
+
+class PostReactionCreate(PostReactionBase):
+    pass
+
+class PostReactionResponse(PostReactionBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    user: Optional[UserResponse] = None
+
+    class Config:
+        from_attributes = True
+
+class CommentBase(BaseModel):
+    content: str
+    parent_comment_id: Optional[int] = None
+
+class CommentCreate(CommentBase):
+    pass
+
+class CommentUpdate(BaseModel):
+    content: Optional[str] = None
+
+class CommentReactionBase(BaseModel):
+    emoji: str
+
+class CommentReactionCreate(CommentReactionBase):
+    pass
+
+class CommentReactionResponse(CommentReactionBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    user: Optional[UserResponse] = None
+
+    class Config:
+        from_attributes = True
+
+class CommentResponse(CommentBase):
+    id: int
+    post_id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool
+    user: Optional[UserResponse] = None
+    attachments: List[AttachmentResponse] = []
+    reactions: List[CommentReactionResponse] = []
+    reaction_counts: Dict[str, int] = {}
+    replies: List["CommentResponse"] = []
+
+    class Config:
+        from_attributes = True
+
+class PostResponse(PostBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool
+    user: Optional[UserResponse] = None
+    attachments: List[AttachmentResponse] = []
+    comments: List[CommentResponse] = []
+    reactions: List[PostReactionResponse] = []
+    reaction_counts: Dict[str, int] = {}
+    comment_count: int = 0
+
+    class Config:
+        from_attributes = True
+
+# Update forward reference for nested comments
+CommentResponse.model_rebuild()

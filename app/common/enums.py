@@ -21,3 +21,11 @@ class InvitationStatus(Enum):
     ACCEPTED = "accepted"
     DECLINED = "declined"
     EXPIRED = "expired"
+
+class AttachmentType(Enum):
+    IMAGE = "image"
+    VIDEO = "video"
+    DOCUMENT = "document"
+    LINK = "link"
+    GIF = "gif"
+    AUDIO = "audio"

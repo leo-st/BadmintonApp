@@ -167,6 +167,12 @@ export const HomeScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity 
+            style={[styles.actionButton, { backgroundColor: '#28a745' }]}
+            onPress={() => navigation.navigate('Posts' as never)}
+          >
+            <Text style={[styles.actionButtonText, { color: 'white' }]}>📱 Posts Feed</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
             style={[styles.actionButton, { backgroundColor: '#007AFF' }]}
             onPress={() => navigation.navigate('Profile' as never)}
           >

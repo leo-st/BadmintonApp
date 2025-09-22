@@ -211,3 +211,96 @@ export interface ReportReaction {
 export interface ReportReactionCreate {
   emoji: string;
 }
+
+// Posts types
+export interface Post {
+  id: number;
+  user_id: number;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  is_deleted: boolean;
+  user?: User;
+  attachments?: Attachment[];
+  comments?: Comment[];
+  reactions?: PostReaction[];
+  reaction_counts?: { [emoji: string]: number };
+  comment_count: number;
+}
+
+export interface PostCreate {
+  content: string;
+}
+
+export interface PostUpdate {
+  content?: string;
+}
+
+export interface Comment {
+  id: number;
+  post_id: number;
+  user_id: number;
+  content: string;
+  parent_comment_id?: number;
+  created_at: string;
+  updated_at: string;
+  is_deleted: boolean;
+  user?: User;
+  attachments?: Attachment[];
+  reactions?: CommentReaction[];
+  reaction_counts?: { [emoji: string]: number };
+  replies?: Comment[];
+}
+
+export interface CommentCreate {
+  content: string;
+  parent_comment_id?: number;
+}
+
+export interface CommentUpdate {
+  content?: string;
+}
+
+export interface Attachment {
+  id: number;
+  file_type: 'image' | 'video' | 'document' | 'link' | 'gif' | 'audio';
+  file_path: string;
+  file_name: string;
+  file_size?: number;
+  mime_type?: string;
+  file_metadata?: any;
+  created_at: string;
+}
+
+export interface AttachmentCreate {
+  file_type: 'image' | 'video' | 'document' | 'link' | 'gif' | 'audio';
+  file_path: string;
+  file_name: string;
+  file_size?: number;
+  mime_type?: string;
+  file_metadata?: any;
+}
+
+export interface PostReaction {
+  id: number;
+  user_id: number;
+  emoji: string;
+  created_at: string;
+  user?: User;
+}
+
+export interface PostReactionCreate {
+  emoji: string;
+}
+
+export interface CommentReaction {
+  id: number;
+  user_id: number;
+  emoji: string;
+  created_at: string;
+  user?: User;
+}
+
+export interface CommentReactionCreate {
+  emoji: string;
+}

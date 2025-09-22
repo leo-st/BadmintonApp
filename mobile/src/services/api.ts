@@ -1,5 +1,5 @@
 // API service for Badminton App
-import { User, UserLogin, UserCreate, Match, MatchCreate, MatchVerification, Tournament, TournamentCreate, TournamentStats, TournamentLeaderboard, Report, ReportCreate, ReportUpdate, ReportReactionCreate } from '../types';
+import { User, UserLogin, UserCreate, Match, MatchCreate, MatchVerification, Tournament, TournamentCreate, TournamentStats, TournamentLeaderboard, Report, ReportCreate, ReportUpdate, ReportReactionCreate, Post, PostCreate, PostUpdate, Comment, CommentCreate, CommentUpdate, Attachment, AttachmentCreate, PostReactionCreate, CommentReactionCreate } from '../types';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -46,6 +46,11 @@ class ApiService {
         const errorText = await response.text();
         console.error('API Error Response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+      }
+
+      // Handle 204 No Content responses
+      if (response.status === 204) {
+        return null;
       }
 
       return await response.json();
@@ -300,6 +305,119 @@ class ApiService {
 
   async getUnseenReportsCount(): Promise<{ unseen_count: number; total_reports: number; seen_reports: number }> {
     return this.request('/reports/unseen-count');
+  }
+
+  // Posts API
+  async getPosts(params?: {
+    skip?: number;
+    limit?: number;
+    user_id?: number;
+  }): Promise<Post[]> {
+    const queryParams = new URLSearchParams();
+    if (params?.skip !== undefined) queryParams.append('skip', params.skip.toString());
+    if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
+    if (params?.user_id !== undefined) queryParams.append('user_id', params.user_id.toString());
+    
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/posts/?${queryString}` : '/posts/';
+    console.log('API getPosts called:', { params, endpoint });
+    return this.request(endpoint);
+  }
+
+  async getPost(postId: number): Promise<Post> {
+    return this.request(`/posts/${postId}`);
+  }
+
+  async createPost(post: PostCreate): Promise<Post> {
+    return this.request('/posts/', {
+      method: 'POST',
+      body: JSON.stringify(post),
+    });
+  }
+
+  async updatePost(postId: number, post: PostUpdate): Promise<Post> {
+    return this.request(`/posts/${postId}`, {
+      method: 'PUT',
+      body: JSON.stringify(post),
+    });
+  }
+
+  async deletePost(postId: number): Promise<void> {
+    await this.request(`/posts/${postId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async addAttachmentToPost(postId: number, attachment: AttachmentCreate): Promise<Attachment> {
+    return this.request(`/posts/${postId}/attachments`, {
+      method: 'POST',
+      body: JSON.stringify(attachment),
+    });
+  }
+
+  async deleteAttachment(attachmentId: number): Promise<void> {
+    await this.request(`/posts/attachments/${attachmentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async addReactionToPost(postId: number, reaction: PostReactionCreate): Promise<{ message: string }> {
+    return this.request(`/posts/${postId}/reactions`, {
+      method: 'POST',
+      body: JSON.stringify(reaction),
+    });
+  }
+
+  async removeReactionFromPost(postId: number, emoji: string): Promise<void> {
+    return this.request(`/posts/${postId}/reactions/${emoji}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getComments(postId: number, params?: {
+    skip?: number;
+    limit?: number;
+  }): Promise<Comment[]> {
+    const queryParams = new URLSearchParams();
+    if (params?.skip !== undefined) queryParams.append('skip', params.skip.toString());
+    if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
+    
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/posts/${postId}/comments?${queryString}` : `/posts/${postId}/comments`;
+    return this.request(endpoint);
+  }
+
+  async createComment(postId: number, comment: CommentCreate): Promise<Comment> {
+    return this.request(`/posts/${postId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify(comment),
+    });
+  }
+
+  async updateComment(commentId: number, comment: CommentUpdate): Promise<Comment> {
+    return this.request(`/posts/comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(comment),
+    });
+  }
+
+  async deleteComment(commentId: number): Promise<void> {
+    return this.request(`/posts/comments/${commentId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async addReactionToComment(commentId: number, reaction: CommentReactionCreate): Promise<{ message: string }> {
+    return this.request(`/posts/comments/${commentId}/reactions`, {
+      method: 'POST',
+      body: JSON.stringify(reaction),
+    });
+  }
+
+  async removeReactionFromComment(commentId: number, emoji: string): Promise<void> {
+    return this.request(`/posts/comments/${commentId}/reactions/${emoji}`, {
+      method: 'DELETE',
+    });
   }
 }
 
