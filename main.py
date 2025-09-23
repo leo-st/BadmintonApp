@@ -20,10 +20,16 @@ except Exception as e:
     sys.exit(1)
 
 # Configure logging
-logging.basicConfig(
-    level=getattr(logging, settings.log_level.upper()),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+try:
+    logging.basicConfig(
+        level=getattr(logging, settings.log_level.upper()),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    print("✅ Logging configured successfully")
+except Exception as e:
+    print(f"❌ Failed to configure logging: {e}")
+    # Use default logging
+    logging.basicConfig(level=logging.INFO)
 
 # Create database tables (only in production)
 # Base.metadata.create_all(bind=engine)
