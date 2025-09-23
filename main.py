@@ -3,9 +3,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 import logging
+import sys
 
-from app.api.routers import auth, matches, tournaments, users, permissions, roles, verification, medals, tournament_invitations, reports, posts
-from app.core.config import settings
+try:
+    from app.api.routers import auth, matches, tournaments, users, permissions, roles, verification, medals, tournament_invitations, reports, posts
+    print("✅ All routers imported successfully")
+except Exception as e:
+    print(f"❌ Failed to import routers: {e}")
+    sys.exit(1)
+
+try:
+    from app.core.config import settings
+    print("✅ Settings imported successfully")
+except Exception as e:
+    print(f"❌ Failed to import settings: {e}")
+    sys.exit(1)
 
 # Configure logging
 logging.basicConfig(
