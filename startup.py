@@ -14,6 +14,12 @@ def run_database_init():
     try:
         print("🔧 Initializing database...")
         
+        # Check if DATABASE_URL is available
+        if not os.getenv("DATABASE_URL"):
+            print("⚠️ DATABASE_URL not found, skipping database initialization")
+            print("Add PostgreSQL database to your Railway project")
+            return True  # Don't fail startup if no database
+        
         # Import and run the database initialization
         from init_db import init_db
         init_db()
@@ -23,7 +29,8 @@ def run_database_init():
         
     except Exception as e:
         print(f"❌ Database initialization failed: {e}")
-        return False
+        print("⚠️ Continuing without database initialization...")
+        return True  # Don't fail startup if database init fails
 
 def start_server():
     """Start the FastAPI server"""
