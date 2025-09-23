@@ -62,10 +62,12 @@ class Settings(BaseSettings):
                 raise ValueError("SECRET_KEY must be set in production environment")
             if len(self.secret_key) < 32:
                 raise ValueError("SECRET_KEY must be at least 32 characters long")
-            if not self.database_password or self.database_password == "":
-                raise ValueError("DATABASE_PASSWORD must be set in production environment")
-            if len(self.database_password) < 8:
-                raise ValueError("DATABASE_PASSWORD must be at least 8 characters long")
+            # Only validate database password if not using DATABASE_URL
+            if not self.database_url or self.database_url == "postgresql://localhost:5432/badminton_app":
+                if not self.database_password or self.database_password == "":
+                    raise ValueError("DATABASE_PASSWORD must be set in production environment")
+                if len(self.database_password) < 8:
+                    raise ValueError("DATABASE_PASSWORD must be at least 8 characters long")
 
     class Config:
         env_file = ".env"
