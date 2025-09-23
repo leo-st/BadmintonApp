@@ -43,7 +43,7 @@ fi
 
 # Reset database for fresh start (remove old conflicting data)
 echo "🔄 Resetting database for fresh start..."
-psql "$DATABASE_URL" -c "DROP SCHEMA IF EXISTS badminton CASCADE; DROP SCHEMA IF EXISTS access_control CASCADE;"
+psql "$DATABASE_URL" -c "DROP SCHEMA IF EXISTS badminton CASCADE; DROP SCHEMA IF EXISTS access_control CASCADE;" || echo "⚠️ Schema reset failed (might not exist yet - continuing...)"
 
 # Run the SQL initialization script
 echo "📝 Executing database initialization SQL..."

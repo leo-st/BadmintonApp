@@ -82,14 +82,44 @@ except Exception as e:
 # Database initialization endpoint
 @app.post("/init-db")
 def init_database():
-    """Initialize the database with tables and sample data"""
+    """Initialize the database with the complete SQL script"""
     try:
-        print("🔧 Starting database initialization...")
-        from init_db import init_db
-        init_db()
-        print("✅ Database initialization completed")
-        return {"status": "success", "message": "Database initialized successfully"}
+        import psycopg2
+        import subprocess
+        print("🔧 Starting database initialization with complete SQL script...")
+        
+        # Get database URL
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            return {"status": "error", "message": "DATABASE_URL not set"}
+        
+        # First, reset any existing schemas
+        print("🔄 Resetting existing schemas...")
+        try:
+            subprocess.run([
+                "psql", database_url, 
+                "-c", "DROP SCHEMA IF EXISTS badminton CASCADE; DROP SCHEMA IF EXISTS access_control CASCADE;"
+            ], check=False, capture_output=True, text=True)
+        except Exception as e:
+            print(f"⚠️ Schema reset warning: {e}")
+        
+        # Run the SQL initialization script using psql command
+        print("📝 Executing database initialization SQL...")
+        result = subprocess.run([
+            "psql", database_url, 
+            "-f", "db/postgres/init/init_database.sql"
+        ], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            print("✅ Database initialization completed with full SQL script")
+            print(f"SQL Output: {result.stdout}")
+            return {"status": "success", "message": "Database initialized with complete SQL script"}
+        else:
+            print(f"❌ SQL script failed: {result.stderr}")
+            return {"status": "error", "message": f"SQL script failed: {result.stderr}"}
+        
     except Exception as e:
+        import traceback
         error_msg = f"Database initialization failed: {str(e)}"
         print(f"❌ {error_msg}")
         print(f"Traceback: {traceback.format_exc()}")
