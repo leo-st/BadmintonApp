@@ -82,6 +82,7 @@ export interface Tournament {
   start_date: string;
   end_date?: string;
   is_active: boolean;
+  status: string;
   created_at: string;
 }
 

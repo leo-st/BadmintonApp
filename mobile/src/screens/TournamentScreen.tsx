@@ -173,10 +173,10 @@ export const TournamentScreen: React.FC = () => {
         <Text style={styles.tournamentName}>{tournament.name}</Text>
         <View style={[
           styles.statusBadge,
-          { backgroundColor: tournament.is_active ? '#34C759' : '#FF3B30' }
+          { backgroundColor: tournament.status === 'completed' ? '#8E44AD' : (tournament.is_active ? '#34C759' : '#FF3B30') }
         ]}>
           <Text style={styles.statusText}>
-            {tournament.is_active ? 'Active' : 'Inactive'}
+            {tournament.status === 'completed' ? '🏁 Completed' : (tournament.is_active ? 'Active' : 'Inactive')}
           </Text>
         </View>
       </View>
@@ -334,7 +334,7 @@ export const TournamentScreen: React.FC = () => {
             {/* Finished Tournaments */}
             {finishedTournaments.length > 0 && (
               <>
-                <Text style={styles.sectionTitle}>📊 Finished Tournaments</Text>
+                <Text style={styles.sectionTitle}>🏁 Completed Tournaments</Text>
                 {finishedTournaments.map(renderTournament)}
               </>
             )}
