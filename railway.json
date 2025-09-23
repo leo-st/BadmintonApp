@@ -5,13 +5,12 @@
     "dockerfilePath": "Dockerfile.simple"
   },
   "deploy": {
-    "startCommand": "python main_fixed.py",
+    "startCommand": "./init_railway_db.sh && python main_fixed.py",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   },
-  "preDeployCommand": "./init_railway_db.sh",
   "environments": {
     "production": {
       "variables": {
