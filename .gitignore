@@ -120,9 +120,12 @@ jspm_packages/
 .nuxt
 dist
 
+# Allow PWA public directory
+!mobile/public/
+
 # Gatsby files
 .cache/
-public
+# public (commented out to allow mobile/public/)
 
 # Storybook build outputs
 .out
