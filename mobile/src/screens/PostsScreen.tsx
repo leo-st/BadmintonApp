@@ -11,18 +11,15 @@ import {
   Image,
   Modal,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { Post, PostCreate, PostUpdate, Comment, CommentCreate, CommentUpdate, Attachment, AttachmentCreate } from '../types';
+import { FloatingActionButton } from '../components/FloatingActionButton';
 
 export const PostsScreen = () => {
-  console.log('PostsScreen component starting...');
-  console.log('PostsScreen component starting...', new Date().toISOString());
-  
   const { user } = useAuth();
-  console.log('User from auth:', user);
-  console.log('User from auth:', user, new Date().toISOString());
+  const navigation = useNavigation();
   
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,15 +40,28 @@ export const PostsScreen = () => {
   const [editPostAttachments, setEditPostAttachments] = useState<{ [postId: number]: Attachment[] }>({});
   const [attachmentsToDelete, setAttachmentsToDelete] = useState<{ [postId: number]: number[] }>({});
 
+  const navigateToUserProfile = (userId: number) => {
+    (navigation as any).navigate('Profile', { userId });
+  };
+
   const loadPosts = useCallback(async () => {
     try {
-      console.log('Loading posts...', { user: user?.id, username: user?.username });
       setLoading(true);
       setError(null);
-      const postsData = await apiService.getPosts({ limit: 20 });
-      console.log('Posts loaded successfully:', postsData.length, 'posts');
-      console.log('Posts data:', postsData);
-      setPosts(postsData);
+      
+      // Use normalized endpoint for better performance
+      const response = await apiService.getPostsNormalized({ limit: 20 });
+      
+      // Reconstruct full post objects by joining posts with users
+      const reconstructedPosts: Post[] = response.posts.map(post => {
+        const user = response.users[post.user_id.toString()];
+        return {
+          ...post,
+          user: user || { id: post.user_id, username: 'Unknown', email: '', full_name: '', is_active: true, created_at: new Date().toISOString(), role_id: 0, permissions: [], medals: { gold: 0, silver: 0, bronze: 0, wood: 0 }, profile_picture_url: null, profile_picture_updated_at: null }
+        };
+      });
+      
+      setPosts(reconstructedPosts);
     } catch (error) {
       console.error('Failed to load posts:', error);
       console.error('Error details:', error);
@@ -63,8 +73,6 @@ export const PostsScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      console.log('useFocusEffect triggered');
-      console.log('About to call loadPosts');
       loadPosts();
     }, [loadPosts])
   );
@@ -157,7 +165,6 @@ export const PostsScreen = () => {
 
   const editPost = async (postId: number) => {
     const content = editPostContent[postId];
-    console.log('editPost called:', { postId, content, user: user?.id });
     if (!content?.trim()) return;
     
     try {
@@ -165,9 +172,7 @@ export const PostsScreen = () => {
         content: content.trim(),
       };
       
-      console.log('Updating post with data:', updateData);
       await apiService.updatePost(postId, updateData);
-      console.log('Post updated successfully');
       
       // Handle attachment deletions
       const attachmentsToDeleteList = attachmentsToDelete[postId] || [];
@@ -201,7 +206,6 @@ export const PostsScreen = () => {
   };
 
   const deletePost = async (postId: number) => {
-    console.log('deletePost called:', { postId, user: user?.id });
     Alert.alert(
       'Delete Post',
       'Are you sure you want to delete this post? This will also delete all comments and attachments.',
@@ -212,9 +216,7 @@ export const PostsScreen = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              console.log('Deleting post:', postId);
               const result = await apiService.deletePost(postId);
-              console.log('Post deleted successfully:', result);
               setPosts(prev => prev.filter(p => p.id !== postId));
             } catch (error) {
               console.error('Failed to delete post:', error);
@@ -264,7 +266,6 @@ export const PostsScreen = () => {
           onPress: async () => {
             try {
               const result = await apiService.deleteComment(commentId);
-              console.log('Comment deleted successfully:', result);
               
               // Find the post ID for this comment and refresh comments
               const postId = Object.keys(postComments).find(pid => 
@@ -438,39 +439,33 @@ export const PostsScreen = () => {
         ) : isVideo ? (
           <View style={styles.attachmentVideo}>
             <Text style={styles.attachmentIcon}>🎥</Text>
-            <Text style={styles.attachmentText}>{attachment.file_name}</Text>
+            <Text style={styles.attachmentText}>{attachment.file_name || 'Unknown'}</Text>
           </View>
         ) : isDocument ? (
           <View style={styles.attachmentDocument}>
             <Text style={styles.attachmentIcon}>📄</Text>
-            <Text style={styles.attachmentText}>{attachment.file_name}</Text>
+            <Text style={styles.attachmentText}>{attachment.file_name || 'Unknown'}</Text>
           </View>
         ) : isLink ? (
           <View style={styles.attachmentLink}>
             <Text style={styles.attachmentIcon}>🔗</Text>
-            <Text style={styles.attachmentText}>{attachment.file_name}</Text>
+            <Text style={styles.attachmentText}>{attachment.file_name || 'Unknown'}</Text>
           </View>
         ) : isAudio ? (
           <View style={styles.attachmentAudio}>
             <Text style={styles.attachmentIcon}>🎵</Text>
-            <Text style={styles.attachmentText}>{attachment.file_name}</Text>
+            <Text style={styles.attachmentText}>{attachment.file_name || 'Unknown'}</Text>
           </View>
         ) : (
           <View style={styles.attachmentGeneric}>
             <Text style={styles.attachmentIcon}>📎</Text>
-            <Text style={styles.attachmentText}>{attachment.file_name}</Text>
+            <Text style={styles.attachmentText}>{attachment.file_name || 'Unknown'}</Text>
           </View>
         )}
       </TouchableOpacity>
     );
   };
 
-  console.log('PostsScreen render:', { 
-    loading, 
-    postsCount: posts.length, 
-    user: user?.username,
-    error
-  });
 
   if (loading) {
     return (
@@ -494,15 +489,6 @@ export const PostsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>📱 Posts Feed</Text>
-        <TouchableOpacity 
-          style={styles.createPostButton}
-          onPress={() => setShowCreatePost(!showCreatePost)}
-        >
-          <Text style={styles.createPostButtonText}>+ New Post</Text>
-        </TouchableOpacity>
-      </View>
 
       {/* Create Post Form */}
       {showCreatePost && (
@@ -526,7 +512,7 @@ export const PostsScreen = () => {
                      attachment.file_type === 'video' ? '🎥' : 
                      attachment.file_type === 'document' ? '📄' : 
                      attachment.file_type === 'link' ? '🔗' : 
-                     attachment.file_type === 'audio' ? '🎵' : '📎'} {attachment.file_name}
+                     attachment.file_type === 'audio' ? '🎵' : '📎'} {attachment.file_name || 'Unknown'}
                   </Text>
                   <TouchableOpacity
                     style={styles.removeAttachmentButton}
@@ -570,25 +556,30 @@ export const PostsScreen = () => {
       )}
 
       <ScrollView style={styles.postsList}>
-        <Text style={styles.debugText}>Posts loaded: {posts.length}</Text>
-        <Text style={styles.debugText}>User: {user?.username}</Text>
-        
         {posts.map((post) => {
           const isOwner = user?.id === post.user_id;
           const isEditing = editingPost[post.id];
           
-          console.log('Rendering post:', { 
-            postId: post.id, 
-            postUserId: post.user_id, 
-            currentUserId: user?.id, 
-            isOwner, 
-            isEditing 
-          });
 
           return (
             <View key={post.id} style={styles.post}>
               <View style={styles.postHeader}>
-                <Text style={styles.postAuthor}>{post.user?.username || 'Unknown'}</Text>
+                <View style={styles.postAuthorContainer}>
+                  {post.user?.profile_picture_url ? (
+                    <Image 
+                      source={{ uri: `http://localhost:8000${post.user.profile_picture_url}` }}
+                      style={styles.postAuthorAvatar}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.postAuthorAvatarPlaceholder}>
+                      <Text style={styles.postAuthorAvatarText}>👤</Text>
+                    </View>
+                  )}
+                  <TouchableOpacity onPress={() => post.user && navigateToUserProfile(post.user.id)}>
+                    <Text style={styles.postAuthor}>{post.user?.username || 'Unknown'}</Text>
+                  </TouchableOpacity>
+                </View>
                 <View style={styles.postHeaderRight}>
                   <Text style={styles.postDate}>{new Date(post.created_at).toLocaleDateString()}</Text>
                   {isOwner && (
@@ -641,7 +632,7 @@ export const PostsScreen = () => {
                                attachment.file_type === 'video' ? '🎥' : 
                                attachment.file_type === 'document' ? '📄' : 
                                attachment.file_type === 'link' ? '🔗' : 
-                               attachment.file_type === 'audio' ? '🎵' : '📎'} {attachment.file_name}
+                               attachment.file_type === 'audio' ? '🎵' : '📎'} {attachment.file_name || 'Unknown'}
                             </Text>
                             <TouchableOpacity
                               style={styles.editAttachmentButton}
@@ -674,7 +665,7 @@ export const PostsScreen = () => {
                              attachment.file_type === 'video' ? '🎥' : 
                              attachment.file_type === 'document' ? '📄' : 
                              attachment.file_type === 'link' ? '🔗' : 
-                             attachment.file_type === 'audio' ? '🎵' : '📎'} {attachment.file_name}
+                             attachment.file_type === 'audio' ? '🎵' : '📎'} {attachment.file_name || 'Unknown'}
                           </Text>
                           <TouchableOpacity
                             style={styles.editAttachmentButton}
@@ -711,7 +702,7 @@ export const PostsScreen = () => {
                   </View>
                 </View>
               ) : (
-                <Text style={styles.postContent}>{post.content}</Text>
+                <Text style={styles.postContent}>{post.content || ''}</Text>
               )}
 
               {/* Attachments */}
@@ -787,7 +778,22 @@ export const PostsScreen = () => {
                       return (
                         <View key={comment.id} style={styles.comment}>
                           <View style={styles.commentHeader}>
-                            <Text style={styles.commentAuthor}>{comment.user?.username || 'Unknown'}</Text>
+                            <View style={styles.commentAuthorContainer}>
+                              {comment.user?.profile_picture_url ? (
+                                <Image 
+                                  source={{ uri: `http://localhost:8000${comment.user.profile_picture_url}` }}
+                                  style={styles.commentAuthorAvatar}
+                                  resizeMode="cover"
+                                />
+                              ) : (
+                                <View style={styles.commentAuthorAvatarPlaceholder}>
+                                  <Text style={styles.commentAuthorAvatarText}>👤</Text>
+                                </View>
+                              )}
+                              <TouchableOpacity onPress={() => comment.user && navigateToUserProfile(comment.user.id)}>
+                                <Text style={styles.commentAuthor}>{comment.user?.username || 'Unknown'}</Text>
+                              </TouchableOpacity>
+                            </View>
                             <View style={styles.commentHeaderRight}>
                               <Text style={styles.commentDate}>{new Date(comment.created_at).toLocaleDateString()}</Text>
                               {isCommentOwner && (
@@ -934,8 +940,8 @@ export const PostsScreen = () => {
                        attachment.file_type === 'document' ? '📄' : 
                        attachment.file_type === 'audio' ? '🎵' : '📎'}
                     </Text>
-                    <Text style={styles.modalFileName}>{attachment.file_name}</Text>
-                    <Text style={styles.modalFileType}>{attachment.file_type.toUpperCase()}</Text>
+                    <Text style={styles.modalFileName}>{attachment.file_name || 'Unknown'}</Text>
+                    <Text style={styles.modalFileType}>{(attachment.file_type || 'unknown').toUpperCase()}</Text>
                     {attachment.file_size && (
                       <Text style={styles.modalFileSize}>
                         {(attachment.file_size / 1024 / 1024).toFixed(2)} MB
@@ -948,6 +954,12 @@ export const PostsScreen = () => {
           </Modal>
         );
       })}
+      
+      {/* Floating Action Button */}
+      <FloatingActionButton
+        onPress={() => setShowCreatePost(!showCreatePost)}
+        icon="+"
+      />
     </View>
   );
 };
@@ -956,17 +968,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#007AFF',
-    padding: 20,
-    paddingTop: 50,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
   },
   postsList: {
     flex: 1,
@@ -1044,18 +1045,6 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     color: '#999',
-  },
-  createPostButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 10,
-  },
-  createPostButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
   },
   createPostForm: {
     backgroundColor: 'white',
@@ -1246,6 +1235,30 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 8,
   },
+  postAuthorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  postAuthorAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  postAuthorAvatarPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  postAuthorAvatarText: {
+    fontSize: 16,
+    color: '#666',
+  },
   postHeaderRight: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1298,6 +1311,30 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 4,
+  },
+  commentAuthorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  commentAuthorAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 6,
+  },
+  commentAuthorAvatarPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  commentAuthorAvatarText: {
+    fontSize: 12,
+    color: '#666',
   },
   commentHeaderRight: {
     flexDirection: 'row',

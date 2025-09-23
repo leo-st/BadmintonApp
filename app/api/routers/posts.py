@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.models.models import User
 from app.schemas.schemas import (
-    PostCreate, PostUpdate, PostResponse,
+    PostCreate, PostUpdate, PostResponse, PostsResponse,
     CommentCreate, CommentUpdate, CommentResponse,
     AttachmentCreate, AttachmentResponse,
     PostReactionCreate, CommentReactionCreate
@@ -38,6 +38,20 @@ def get_posts(
     """Get posts with pagination, optionally filtered by user"""
     post_service = PostService(db)
     return post_service.get_posts(skip=skip, limit=limit, user_id=user_id)
+
+
+@router.get("/normalized", response_model=PostsResponse)
+def get_posts_normalized(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    user_id: Optional[int] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get posts with normalized response to eliminate user data duplication"""
+    post_service = PostService(db)
+    result = post_service.get_posts_normalized(skip=skip, limit=limit, user_id=user_id)
+    return PostsResponse(**result)
 
 
 @router.get("/{post_id}", response_model=PostResponse)

@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { LoginScreen } from './src/screens/LoginScreen';
-import { HomeScreen } from './src/screens/HomeScreen';
+import { MainScreen } from './src/screens/MainScreen';
 import { MatchesScreen } from './src/screens/MatchesScreen';
 import { RecordMatchScreen } from './src/screens/RecordMatchScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
@@ -32,7 +32,7 @@ function AppContent() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           <>
-            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Main" component={MainScreen} />
             <Stack.Screen name="Matches" component={MatchesScreen} />
             <Stack.Screen name="RecordMatch" component={RecordMatchScreen} />
             <Stack.Screen name="Profile" component={ProfileScreen} />

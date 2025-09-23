@@ -11,6 +11,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Match } from '../types';
 import { apiService } from '../services/api';
+import { FloatingActionButton } from '../components/FloatingActionButton';
 
 export const MatchesScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -25,7 +26,11 @@ export const MatchesScreen: React.FC = () => {
     try {
       setIsLoading(true);
       const matchesData = await apiService.getMatches();
-      setMatches(matchesData);
+      // Sort matches by newest to oldest (by created_at date)
+      const sortedMatches = matchesData.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      setMatches(sortedMatches);
     } catch (error) {
       console.error('Failed to load matches:', error);
       Alert.alert('Error', 'Failed to load matches. Please try again.');
@@ -75,23 +80,7 @@ export const MatchesScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>🏸 Matches</Text>
-        <TouchableOpacity
-          style={styles.refreshButton}
-          onPress={loadMatches}
-        >
-          <Text style={styles.refreshButtonText}>Refresh</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.content}>
+        <ScrollView style={styles.content}>
         {matches.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No matches found</Text>
@@ -110,7 +99,7 @@ export const MatchesScreen: React.FC = () => {
             <View key={match.id} style={styles.matchCard}>
               <View style={styles.matchHeader}>
                 <Text style={styles.matchType}>
-                  {match.match_type === 'casual' ? '🏓 Casual' : '🏆 Tournament'}
+                  {match.match_type === 'casual' ? '🏸 Casual' : '🏆 Tournament'}
                 </Text>
                 <View
                   style={[
@@ -154,6 +143,12 @@ export const MatchesScreen: React.FC = () => {
           ))
         )}
       </ScrollView>
+      
+      {/* Floating Action Button */}
+      <FloatingActionButton
+        onPress={() => navigation.navigate('RecordMatch' as never)}
+        icon="+"
+      />
     </View>
   );
 };
@@ -173,35 +168,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#666',
-  },
-  header: {
-    backgroundColor: '#007AFF',
-    padding: 20,
-    paddingTop: 60,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    padding: 8,
-  },
-  backButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  refreshButton: {
-    padding: 8,
-  },
-  refreshButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
   },
   content: {
     flex: 1,

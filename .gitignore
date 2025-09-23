@@ -158,3 +158,5 @@ coverage.xml
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+/uploads/profile_pictures/

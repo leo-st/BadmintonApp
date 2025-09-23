@@ -31,6 +31,8 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     role_id = Column(Integer, ForeignKey("access_control.Role.role_id"), nullable=True)
+    profile_picture_url = Column(String(500), nullable=True)
+    profile_picture_updated_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     submitted_matches = relationship("Match", foreign_keys="Match.submitted_by_id", back_populates="submitted_by")

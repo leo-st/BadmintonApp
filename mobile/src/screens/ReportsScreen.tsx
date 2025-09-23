@@ -15,6 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Report } from '../types';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { MainNavigation } from '../components/MainNavigation';
 
 const ReportsScreen = ({ navigation }: any) => {
   const [reports, setReports] = useState<Report[]>([]);
@@ -240,7 +241,8 @@ const ReportsScreen = ({ navigation }: any) => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <MainNavigation title="📋 Reports" showTabs={false}>
+      <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.title}>Reports</Text>
@@ -298,7 +300,8 @@ const ReportsScreen = ({ navigation }: any) => {
           </View>
         }
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </MainNavigation>
   );
 };
 

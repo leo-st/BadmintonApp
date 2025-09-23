@@ -11,6 +11,8 @@ export interface User {
   role_name?: string;
   permissions?: string[];
   medals?: UserMedalCounts;
+  profile_picture_url?: string;
+  profile_picture_updated_at?: string;
 }
 
 export interface UserMedalCounts {
@@ -141,6 +143,7 @@ export interface AuthContextType {
   isLoading: boolean;
   hasPermission: (permission: string) => boolean;
   isAdmin: () => boolean;
+  refreshUser: () => Promise<void>;
 }
 
 export interface ApiResponse<T> {

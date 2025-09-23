@@ -81,7 +81,9 @@ def get_user_me(user: User, db: Session) -> Dict:
         "role_id": user.role_id,
         "role_name": role_name,
         "permissions": permissions,
-        "medals": medal_counts
+        "medals": medal_counts,
+        "profile_picture_url": user.profile_picture_url,
+        "profile_picture_updated_at": user.profile_picture_updated_at
     }
 
 

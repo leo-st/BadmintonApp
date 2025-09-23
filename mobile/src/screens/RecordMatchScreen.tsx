@@ -125,7 +125,6 @@ export const RecordMatchScreen: React.FC = () => {
         notes: notes.trim() || undefined,
       };
 
-      console.log('Creating match with data:', matchData);
       await apiService.createMatch(matchData);
       Alert.alert('Success', 'Match recorded successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() },

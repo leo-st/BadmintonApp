@@ -16,9 +16,15 @@ class ApiService {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
+    // Don't set Content-Type for FormData, let the browser set it with boundary
+    const headers: Record<string, string> = {};
+    if (!(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
+    
     const config: RequestInit = {
       headers: {
-        'Content-Type': 'application/json',
+        ...headers,
         ...options.headers,
       },
       credentials: 'include', // Important for cookie-based auth
@@ -324,6 +330,22 @@ class ApiService {
     return this.request(endpoint);
   }
 
+  async getPostsNormalized(params?: {
+    skip?: number;
+    limit?: number;
+    user_id?: number;
+  }): Promise<{posts: Post[], users: Record<string, User>}> {
+    const queryParams = new URLSearchParams();
+    if (params?.skip !== undefined) queryParams.append('skip', params.skip.toString());
+    if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
+    if (params?.user_id !== undefined) queryParams.append('user_id', params.user_id.toString());
+    
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/posts/normalized?${queryString}` : '/posts/normalized';
+    console.log('API getPostsNormalized called:', { params, endpoint });
+    return this.request(endpoint);
+  }
+
   async getPost(postId: number): Promise<Post> {
     return this.request(`/posts/${postId}`);
   }
@@ -418,6 +440,64 @@ class ApiService {
     return this.request(`/posts/comments/${commentId}/reactions/${emoji}`, {
       method: 'DELETE',
     });
+  }
+
+  // Profile picture methods
+  async uploadProfilePicture(file: any): Promise<{ message: string; profile_picture_url: string }> {
+    const formData = new FormData();
+    
+    // Handle React Native file format (with uri property)
+    if (file.uri) {
+      formData.append('file', {
+        uri: file.uri,
+        type: file.type || 'image/jpeg',
+        name: file.name || 'profile.jpg',
+      } as any);
+    } else {
+      // Handle web File object
+      formData.append('file', file);
+    }
+
+    return this.request('/users/me/profile-picture', {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
+  async deleteProfilePicture(): Promise<{ message: string }> {
+    return this.request('/users/me/profile-picture', {
+      method: 'DELETE',
+    });
+  }
+
+  // Statistics API
+  async getUserStatistics(
+    userId: number,
+    filters?: {
+      match_type?: 'casual' | 'tournament' | 'all';
+      player_ids?: number[];
+    }
+  ): Promise<{
+    user_id: number;
+    username: string;
+    total_matches: number;
+    wins: number;
+    losses: number;
+    win_rate: number;
+    filters: {
+      match_type: string;
+      player_ids: number[];
+    };
+  }> {
+    const queryParams = new URLSearchParams();
+    if (filters?.match_type) queryParams.append('match_type', filters.match_type);
+    if (filters?.player_ids && filters.player_ids.length > 0) {
+      queryParams.append('player_ids', filters.player_ids.join(','));
+    }
+    
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/users/${userId}/statistics?${queryString}` : `/users/${userId}/statistics`;
+    return this.request(endpoint);
   }
 }
 

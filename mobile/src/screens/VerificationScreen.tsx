@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { Match } from '../types';
+import { MainNavigation } from '../components/MainNavigation';
 
 export const VerificationScreen: React.FC = () => {
   const { user, hasPermission } = useAuth();
@@ -169,8 +170,9 @@ export const VerificationScreen: React.FC = () => {
   }
 
   return (
-    <ScrollView 
-      style={styles.container}
+    <MainNavigation title="✅ Verify Matches" showTabs={false}>
+      <ScrollView 
+        style={styles.container}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
@@ -196,7 +198,8 @@ export const VerificationScreen: React.FC = () => {
           {matches.map(renderMatch)}
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </MainNavigation>
   );
 };
 

@@ -14,17 +14,8 @@ RUN useradd -m -u 1000 -g 1000 postgres
 ENV HOME=/home/db
 
 # Use default PGDATA; let Docker mount volume to /var/lib/postgresql/data
-# Copy SQL init scripts
-COPY db/postgres/init/000_create_schema.sql /docker-entrypoint-initdb.d/000_create_schema.sql
-COPY db/postgres/init/001_create_tables.sql /docker-entrypoint-initdb.d/001_create_tables.sql
-COPY db/postgres/init/002_load_sample_data.sql /docker-entrypoint-initdb.d/002_load_sample_data.sql
-COPY db/postgres/init/003_create_access_control.sql /docker-entrypoint-initdb.d/003_create_access_control.sql
-COPY db/postgres/init/004_link_user_to_access_control.sql /docker-entrypoint-initdb.d/004_link_user_to_access_control.sql
-COPY db/postgres/init/005_create_medals_system.sql /docker-entrypoint-initdb.d/005_create_medals_system.sql
-COPY db/postgres/init/006_create_medals_system.sql /docker-entrypoint-initdb.d/006_create_medals_system.sql
-COPY db/postgres/init/007_create_tournament_invitation_system.sql /docker-entrypoint-initdb.d/007_create_tournament_invitation_system.sql
-COPY db/postgres/init/008_create_reports_system.sql /docker-entrypoint-initdb.d/008_create_reports_system.sql
-COPY db/postgres/init/009_add_report_views.sql /docker-entrypoint-initdb.d/009_add_report_views.sql
+# Copy consolidated SQL init script
+COPY db/postgres/init/init_database.sql /docker-entrypoint-initdb.d/init_database.sql
 
 # Let base image entrypoint handle startup
 CMD ["postgres"]

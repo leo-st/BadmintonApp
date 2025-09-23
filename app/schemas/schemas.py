@@ -21,6 +21,7 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     is_active: Optional[bool] = None
     role_id: Optional[int] = None
+    profile_picture_url: Optional[str] = None
 
 class UserMedalCounts(BaseModel):
     gold: int = 0
@@ -35,6 +36,8 @@ class UserResponse(UserBase):
     role_id: Optional[int] = None
     permissions: Optional[List[str]] = None
     medals: Optional[UserMedalCounts] = None
+    profile_picture_url: Optional[str] = None
+    profile_picture_updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -360,6 +363,29 @@ class PostResponse(PostBase):
 
     class Config:
         from_attributes = True
+
+# Normalized response schemas for efficient data transfer
+class PostSummary(BaseModel):
+    """Minimal post data without nested user object"""
+    id: int
+    user_id: int
+    content: str
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool
+    attachments: List[AttachmentResponse] = []
+    reactions: List[PostReactionResponse] = []
+    reaction_counts: Dict[str, int] = {}
+    comment_count: int = 0
+
+    class Config:
+        from_attributes = True
+
+class PostsResponse(BaseModel):
+    """Normalized posts response with separate users lookup"""
+    posts: List[PostSummary]
+    users: Dict[str, UserResponse]  # user_id as string key
+    total_count: Optional[int] = None
 
 # Update forward reference for nested comments
 CommentResponse.model_rebuild()

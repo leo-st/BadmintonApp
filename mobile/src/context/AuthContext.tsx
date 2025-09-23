@@ -72,6 +72,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const userData = await apiService.getCurrentUser();
+      setUser(userData);
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     login,
@@ -79,6 +88,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     hasPermission,
     isAdmin,
+    refreshUser,
   };
 
   return (

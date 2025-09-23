@@ -12,6 +12,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { apiService } from '../services/api';
 import { Tournament, TournamentLeaderboard } from '../types';
+import { FloatingActionButton } from '../components/FloatingActionButton';
 
 export const TournamentLeaderboardScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -188,15 +189,6 @@ export const TournamentLeaderboardScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>🏆 Tournament Leaderboards</Text>
-      </View>
 
       <ScrollView
         style={styles.content}
@@ -219,6 +211,7 @@ export const TournamentLeaderboardScreen: React.FC = () => {
           </View>
         )}
       </ScrollView>
+      
     </View>
   );
 };
@@ -227,27 +220,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#007AFF',
-    padding: 20,
-    paddingTop: 60,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  backButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    flex: 1,
   },
   content: {
     flex: 1,

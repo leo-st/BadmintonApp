@@ -12,6 +12,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { apiService } from '../services/api';
 import { TournamentInvitation } from '../types';
+import { MainNavigation } from '../components/MainNavigation';
 
 export const MyInvitationsScreen: React.FC = () => {
   const [invitations, setInvitations] = useState<TournamentInvitation[]>([]);
@@ -155,7 +156,8 @@ export const MyInvitationsScreen: React.FC = () => {
   const otherInvitations = invitations.filter(inv => inv.status !== 'pending' || isExpired(inv.expires_at));
 
   return (
-    <View style={styles.container}>
+    <MainNavigation title="📨 My Invitations" showTabs={false}>
+      <View style={styles.container}>
       <Text style={styles.title}>My Tournament Invitations</Text>
       
       {pendingInvitations.length > 0 && (
@@ -192,7 +194,8 @@ export const MyInvitationsScreen: React.FC = () => {
           <Text style={styles.emptySubtext}>You'll see tournament invitations here when admins invite you to participate.</Text>
         </View>
       )}
-    </View>
+      </View>
+    </MainNavigation>
   );
 };
 

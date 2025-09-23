@@ -44,6 +44,38 @@ class PostService:
         
         return [self._format_post_response(post) for post in posts]
 
+    def get_posts_normalized(self, skip: int = 0, limit: int = 20, user_id: Optional[int] = None) -> Dict:
+        """Get posts with normalized response to eliminate user data duplication"""
+        query = self.db.query(Post).filter(Post.is_deleted == False)
+        
+        if user_id:
+            query = query.filter(Post.user_id == user_id)
+        
+        # Load posts with user data
+        posts = query.options(
+            joinedload(Post.user),
+            joinedload(Post.attachments),
+            joinedload(Post.reactions)
+        ).order_by(desc(Post.created_at)).offset(skip).limit(limit).all()
+        
+        # Separate posts and users to eliminate duplication
+        posts_data = []
+        users_lookup = {}
+        
+        for post in posts:
+            # Format post without user object
+            post_data = self._format_post_summary(post)
+            posts_data.append(post_data)
+            
+            # Add user to lookup if not already present
+            if post.user and str(post.user.id) not in users_lookup:
+                users_lookup[str(post.user.id)] = self._format_user_response(post.user)
+        
+        return {
+            "posts": posts_data,
+            "users": users_lookup
+        }
+
     def get_post(self, post_id: int) -> Optional[PostResponse]:
         """Get a single post by ID"""
         post = self.db.query(Post).options(
@@ -331,7 +363,9 @@ class PostService:
                 "created_at": post.user.created_at,
                 "role_id": post.user.role_id,
                 "permissions": getattr(post.user, 'permissions', None),
-                "medals": post.user.get_medal_counts() if hasattr(post.user, 'get_medal_counts') else {"gold": 0, "silver": 0, "bronze": 0, "wood": 0}
+                "medals": post.user.get_medal_counts() if hasattr(post.user, 'get_medal_counts') else {"gold": 0, "silver": 0, "bronze": 0, "wood": 0},
+                "profile_picture_url": post.user.profile_picture_url,
+                "profile_picture_updated_at": post.user.profile_picture_updated_at
             }
 
         # Format reactions with proper user data
@@ -400,7 +434,9 @@ class PostService:
                 "created_at": comment.user.created_at,
                 "role_id": comment.user.role_id,
                 "permissions": getattr(comment.user, 'permissions', None),
-                "medals": comment.user.get_medal_counts() if hasattr(comment.user, 'get_medal_counts') else {"gold": 0, "silver": 0, "bronze": 0, "wood": 0}
+                "medals": comment.user.get_medal_counts() if hasattr(comment.user, 'get_medal_counts') else {"gold": 0, "silver": 0, "bronze": 0, "wood": 0},
+                "profile_picture_url": comment.user.profile_picture_url,
+                "profile_picture_updated_at": comment.user.profile_picture_updated_at
             }
 
         return CommentResponse(
@@ -418,3 +454,43 @@ class PostService:
             reaction_counts=reaction_counts,
             replies=formatted_replies
         )
+
+    def _format_post_summary(self, post: Post) -> Dict:
+        """Format a post without nested user object for normalized response"""
+        # Count reactions by emoji
+        reaction_counts = {}
+        for reaction in post.reactions:
+            emoji = reaction.emoji
+            reaction_counts[emoji] = reaction_counts.get(emoji, 0) + 1
+        
+        # Use the database comment_count for performance
+        comment_count = post.comment_count
+        
+        return {
+            "id": post.id,
+            "user_id": post.user_id,
+            "content": post.content,
+            "created_at": post.created_at,
+            "updated_at": post.updated_at,
+            "is_deleted": post.is_deleted,
+            "attachments": [AttachmentResponse.from_orm(att) for att in post.attachments],
+            "reactions": [],  # Simplified - exclude reactions for now to avoid user data complexity
+            "reaction_counts": reaction_counts,
+            "comment_count": comment_count
+        }
+
+    def _format_user_response(self, user: User) -> Dict:
+        """Format user data for normalized response"""
+        return {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "full_name": user.full_name,
+            "is_active": user.is_active,
+            "created_at": user.created_at,
+            "role_id": user.role_id,
+            "permissions": getattr(user, 'permissions', None),
+            "medals": user.get_medal_counts() if hasattr(user, 'get_medal_counts') else {"gold": 0, "silver": 0, "bronze": 0, "wood": 0},
+            "profile_picture_url": user.profile_picture_url,
+            "profile_picture_updated_at": user.profile_picture_updated_at
+        }
