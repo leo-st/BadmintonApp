@@ -6,10 +6,23 @@ import os
 
 class Settings(BaseSettings):
     # Database
-    database_url: str = "postgresql://badminton_user:badminton_password@localhost:5432/badminton_app"
+    database_url: str = "postgresql://localhost:5432/badminton_app"
+    database_user: str = "badminton_user"
+    database_password: str = ""
+    database_host: str = "localhost"
+    database_port: int = 5432
+    database_name: str = "badminton_app"
+    
+    @property
+    def full_database_url(self) -> str:
+        """Construct the full database URL from components"""
+        if self.database_password:
+            return f"postgresql://{self.database_user}:{self.database_password}@{self.database_host}:{self.database_port}/{self.database_name}"
+        else:
+            return self.database_url
     
     # Security
-    secret_key: str = "your-secret-key-change-in-production"
+    secret_key: str = ""
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     
@@ -41,9 +54,24 @@ class Settings(BaseSettings):
         if isinstance(self.cors_origins, str):
             return [origin.strip() for origin in self.cors_origins.split(",")]
         return self.cors_origins
+    
+    def validate_security(self) -> None:
+        """Validate that required security settings are present"""
+        if self.is_production:
+            if not self.secret_key or self.secret_key == "":
+                raise ValueError("SECRET_KEY must be set in production environment")
+            if len(self.secret_key) < 32:
+                raise ValueError("SECRET_KEY must be at least 32 characters long")
+            if not self.database_password or self.database_password == "":
+                raise ValueError("DATABASE_PASSWORD must be set in production environment")
+            if len(self.database_password) < 8:
+                raise ValueError("DATABASE_PASSWORD must be at least 8 characters long")
 
     class Config:
         env_file = ".env"
         case_sensitive = False
 
 settings = Settings()
+
+# Validate security settings on import
+settings.validate_security()

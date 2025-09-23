@@ -21,7 +21,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.api
+      dockerfile: Dockerfile.prod
     ports:
       - "8000:8000"
     depends_on:
@@ -29,8 +29,13 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DATABASE_USER: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${POSTGRES_DB}
       SECRET_KEY: ${SECRET_KEY}
-      ENVIRONMENT: production
+      ENVIRONMENT: ${ENVIRONMENT:-production}
       CORS_ORIGINS: ${CORS_ORIGINS}
     restart: unless-stopped
     healthcheck:
