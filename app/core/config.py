@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     
     # CORS
-    cors_origins: List[str] = ["http://localhost:3000", "http://localhost:19006"]
+    cors_origins: str = "http://localhost:3000,http://localhost:19006"
     
     # File uploads
     max_upload_size: int = 10485760  # 10MB
