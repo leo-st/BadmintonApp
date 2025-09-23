@@ -26,7 +26,20 @@
       "package": "com.badmintonapp.mobile"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "static",
+      "name": "Badminton App",
+      "shortName": "Badminton",
+      "lang": "en",
+      "scope": "/",
+      "themeColor": "#007AFF",
+      "backgroundColor": "#ffffff",
+      "startUrl": "/",
+      "display": "standalone",
+      "orientation": "portrait",
+      "preferRelatedApplications": false,
+      "description": "Track badminton matches and tournaments with your local group"
     },
     "plugins": [
       "expo-font"

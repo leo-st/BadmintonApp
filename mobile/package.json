@@ -9,7 +9,10 @@
     "web": "expo start --web",
     "dev": "expo start --ios --clear --no-dev --minify=false",
     "dev:fast": "expo start --ios --clear",
-    "dev:web": "expo start --web --clear"
+    "dev:web": "expo start --web --clear",
+    "build:pwa": "./scripts/build-pwa.sh",
+    "build:web": "expo export --platform web",
+    "preview:pwa": "npx serve dist -s"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
