@@ -5,7 +5,7 @@
     "dockerfilePath": "Dockerfile.simple"
   },
   "deploy": {
-    "startCommand": "python main_minimal.py",
+    "startCommand": "python main.py",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
