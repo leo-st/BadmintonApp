@@ -90,7 +90,7 @@ def login(credentials: dict):
         if not user or not verify_password(credentials.get("password"), user.hashed_password):
             return {"error": "Invalid credentials"}
         
-        access_token = create_access_token(data={"sub": user.username})
+        access_token = create_access_token(subject=user.username)
         return {
             "access_token": access_token,
             "token_type": "bearer",
