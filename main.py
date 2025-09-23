@@ -56,6 +56,17 @@ app.include_router(posts.router)
 def health_check():
     return {"status": "healthy"}
 
+# Database initialization endpoint
+@app.post("/init-db")
+def init_database():
+    """Initialize the database with tables and sample data"""
+    try:
+        from init_db import init_db
+        init_db()
+        return {"status": "success", "message": "Database initialized successfully"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
