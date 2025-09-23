@@ -74,6 +74,89 @@ def init_database():
         print(f"❌ {error_msg}")
         return {"status": "error", "message": error_msg}
 
+# Auth endpoints
+@app.post("/auth/login")
+def login(credentials: dict):
+    """Login endpoint"""
+    try:
+        from app.core.database import SessionLocal
+        from app.models.models import User
+        from app.core.auth import verify_password, create_access_token
+        
+        db = SessionLocal()
+        user = db.query(User).filter(User.username == credentials.get("username")).first()
+        db.close()
+        
+        if not user or not verify_password(credentials.get("password"), user.hashed_password):
+            return {"error": "Invalid credentials"}
+        
+        access_token = create_access_token(data={"sub": user.username})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "full_name": user.full_name,
+                "role_id": user.role_id
+            }
+        }
+    except Exception as e:
+        return {"error": f"Login failed: {str(e)}"}
+
+@app.get("/users")
+def get_users():
+    """Get all users"""
+    try:
+        from app.core.database import SessionLocal
+        from app.models.models import User
+        
+        db = SessionLocal()
+        users = db.query(User).all()
+        db.close()
+        
+        return {
+            "users": [
+                {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "full_name": user.full_name,
+                    "role_id": user.role_id
+                } for user in users
+            ]
+        }
+    except Exception as e:
+        return {"error": f"Failed to get users: {str(e)}"}
+
+@app.get("/matches")
+def get_matches():
+    """Get all matches"""
+    try:
+        from app.core.database import SessionLocal
+        from app.models.models import Match
+        
+        db = SessionLocal()
+        matches = db.query(Match).all()
+        db.close()
+        
+        return {
+            "matches": [
+                {
+                    "id": match.id,
+                    "player1_id": match.player1_id,
+                    "player2_id": match.player2_id,
+                    "player1_score": match.player1_score,
+                    "player2_score": match.player2_score,
+                    "status": match.status.value if match.status else None,
+                    "match_type": match.match_type.value if match.match_type else None
+                } for match in matches
+            ]
+        }
+    except Exception as e:
+        return {"error": f"Failed to get matches: {str(e)}"}
+
 if __name__ == "__main__":
     try:
         import uvicorn
