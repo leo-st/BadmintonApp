@@ -5,7 +5,7 @@
     "dockerfilePath": "Dockerfile.simple"
   },
   "deploy": {
-    "startCommand": "./init_railway_db.sh && python main_fixed.py",
+    "startCommand": "python main_minimal.py",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
