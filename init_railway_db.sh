@@ -41,6 +41,10 @@ else
     exit 1
 fi
 
+# Reset database for fresh start (remove old conflicting data)
+echo "🔄 Resetting database for fresh start..."
+psql "$DATABASE_URL" -c "DROP SCHEMA IF EXISTS badminton CASCADE; DROP SCHEMA IF EXISTS access_control CASCADE;"
+
 # Run the SQL initialization script
 echo "📝 Executing database initialization SQL..."
 psql "$DATABASE_URL" -f db/postgres/init/init_database.sql
