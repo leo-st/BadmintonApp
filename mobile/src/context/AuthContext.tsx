@@ -23,7 +23,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const userData = await apiService.getCurrentUser();
       setUser(userData);
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.log('No existing authentication found, user needs to log in');
       setUser(null);
     } finally {
       setIsLoading(false);

@@ -155,61 +155,12 @@
         </div>
         
         <div class="content">
-            <div id="app">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading Badminton App...</p>
-                </div>
-            </div>
-            
-            <div class="features">
-                <h3>Features</h3>
-                <div class="feature">
-                    <div class="feature-icon">📊</div>
-                    <span>Track match scores</span>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🏆</div>
-                    <span>Tournament management</span>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">📱</div>
-                    <span>Works on mobile & desktop</span>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">👥</div>
-                    <span>Perfect for small groups</span>
-                </div>
-            </div>
+            <div id="root"></div>
         </div>
     </div>
     
     <script>
-        // Simple app loader
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if backend is available
-            const backendUrl = window.location.hostname === 'localhost' 
-                ? 'http://localhost:8000' 
-                : 'https://your-railway-app.railway.app';
-            
-            // Show loading state
-            setTimeout(() => {
-                document.getElementById('app').innerHTML = `
-                    <div class="login-form">
-                        <h3>Welcome to Badminton App!</h3>
-                        <p>Your backend is being deployed to Railway. Once it's ready, you'll be able to:</p>
-                        <ul>
-                            <li>Create an account</li>
-                            <li>Record match scores</li>
-                            <li>View tournament standings</li>
-                            <li>Track your progress</li>
-                        </ul>
-                        <p><strong>Backend URL:</strong> ${backendUrl}</p>
-                        <button class="btn" onclick="window.location.reload()">Check Status</button>
-                    </div>
-                `;
-            }, 2000);
-        });
+        console.log('Badminton App PWA loading...');
     </script>
 </body>
 </html>

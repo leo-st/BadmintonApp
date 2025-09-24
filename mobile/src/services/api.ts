@@ -1,7 +1,7 @@
 // API service for Badminton App
 import { User, UserLogin, UserCreate, Match, MatchCreate, MatchVerification, Tournament, TournamentCreate, TournamentStats, TournamentLeaderboard, Report, ReportCreate, ReportUpdate, ReportReactionCreate, Post, PostCreate, PostUpdate, Comment, CommentCreate, CommentUpdate, Attachment, AttachmentCreate, PostReactionCreate, CommentReactionCreate } from '../types';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://web-production-d1979.up.railway.app';
 
 class ApiService {
   private baseUrl: string;
