@@ -12,7 +12,10 @@
     "dev:web": "expo start --web --clear",
     "build:pwa": "./scripts/build-pwa.sh",
     "build:web": "expo export --platform web",
-    "preview:pwa": "npx serve dist -s"
+    "preview:pwa": "npx serve dist -s",
+    "env:dev": "node scripts/switch-env.js development",
+    "env:prod": "node scripts/switch-env.js production",
+    "env:local": "node scripts/switch-env.js localhost"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

@@ -26,11 +26,8 @@ export const MatchesScreen: React.FC = () => {
     try {
       setIsLoading(true);
       const matchesData = await apiService.getMatches();
-      // Sort matches by newest to oldest (by created_at date)
-      const sortedMatches = matchesData.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      setMatches(sortedMatches);
+      // Matches are already sorted by newest to oldest from the backend
+      setMatches(matchesData);
     } catch (error) {
       console.error('Failed to load matches:', error);
       Alert.alert('Error', 'Failed to load matches. Please try again.');

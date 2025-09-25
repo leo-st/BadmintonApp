@@ -404,7 +404,7 @@ INSERT INTO access_control."RolesPermissions" ("role_id", "permission_id") VALUE
 
 -- Insert sample users (passwords are 'password123' hashed with pbkdf2_sha256)
 INSERT INTO badminton."User" ("username", "email", "full_name", "hashed_password", "role_id") VALUES
-('Švicarac', 'leo@example.com', 'Leo Ivas', '$pbkdf2-sha256$29000$yBlDiBFiDEFoTakVgpAyBg$vKkJszu6Pa3Lk0c498VuVHDQ/5zTQ2VYAk0vni2uKwc', 2),
+('Švicarac', 'leo@example.com', 'Leo Ivas', '$pbkdf2-sha256$29000$yBlDiBFiDEFoTakVgpAyBg$vKkJszu6Pa3Lk0c498VuVHDQ/5zTQ2VYAk0vni2uKwc', 1),
 ('Šampion', 'denis@example.com', 'Denis Baban', '$pbkdf2-sha256$29000$x3iv1bq3tnaulbJ2rtWacw$.E.dV59Yiit9cZnRpl8JM6spW1CFaYfezzhmrkUk73Y', 2),
 ('Vice', 'vice@example.com', 'Vice Dumanić', '$pbkdf2-sha256$29000$jHFu7R0DwPgfIwSAcE4pxQ$/TkMnwBV6wB.BMorZ8.wWClIDWkHQVYCI8QHSDPxyCE', 2),
 ('Rokich', 'rokich@example.com', 'Roko Čopac', '$pbkdf2-sha256$29000$4XwPoTTmnPNeK.V8zzkHQA$6YeUOtRvNZAEk4D7YFsDNoLcvYnATv2xMl63EQA6KbA', 2);

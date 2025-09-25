@@ -39,8 +39,8 @@ async def authenticate(
         key="access_token",
         value=access_token,
         httponly=True,
-        samesite="none",  # Allow cross-origin cookies
-        secure=True,      # Required for samesite="none"
+        samesite="lax",   # Allow cross-origin cookies for local development
+        secure=False,     # Allow HTTP for local development
         max_age=settings.access_token_expire_minutes * 60
     )
     return response

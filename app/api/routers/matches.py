@@ -92,7 +92,7 @@ def create_match(
 @router.get("", response_model=list[MatchResponse])
 def read_matches(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 500,
     match_type: Optional[str] = Query(None, description="Filter by match type: casual or tournament"),
     status: Optional[str] = Query(None, description="Filter by status: pending_verification, verified, or rejected"),
     current_user: User = Depends(get_current_active_user),
@@ -119,7 +119,7 @@ def read_matches(
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Invalid status: {status}. Valid values: pending_verification, verified, rejected")
 
-    matches = query.offset(skip).limit(limit).all()
+    matches = query.order_by(Match.match_date.desc()).offset(skip).limit(limit).all()
     return matches
 
 @router.get("/{match_id}", response_model=MatchResponse)
