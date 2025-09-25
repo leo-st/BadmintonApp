@@ -1,12 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
 from app.core.database import get_db
 from app.models.models import User
-from app.schemas.schemas import UserCreate, UserResponse, UserLogin
-from app.core.auth import authenticate_user, create_access_token, get_password_hash, get_current_user
+from app.schemas.schemas import UserLogin
+from app.core.auth import create_access_token, get_current_user
 from app.core.config import settings
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -33,14 +33,14 @@ async def authenticate(
         expires_delta=expires,
     )
 
-    # set it as a cookie
-    response = JSONResponse(content={"message": "login successful"})
+    # return token in body (for web/PWA) and set cookie (for native)
+    response = JSONResponse(content={"message": "login successful", "access_token": access_token, "token_type": "bearer"})
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        samesite="lax",   # Allow cross-origin cookies for local development
-        secure=False,     # Allow HTTP for local development
+        samesite="lax",   # Keep cookie behavior for native/local
+        secure=False,     # Overridden in prod by reverse proxy or settings if needed
         max_age=settings.access_token_expire_minutes * 60
     )
     return response

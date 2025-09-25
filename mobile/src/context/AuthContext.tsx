@@ -14,18 +14,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check if user is already logged in (you might want to store this in AsyncStorage)
+    console.log('Auth: useEffect mount -> checkAuthStatus');
     checkAuthStatus();
   }, []);
 
   const checkAuthStatus = async () => {
     try {
+      console.log('Auth: checkAuthStatus start');
       // Try to get current user with permissions
       const userData = await apiService.getCurrentUser();
+      console.log('Auth: checkAuthStatus success', userData?.username, userData?.id);
       setUser(userData);
     } catch (error) {
-      console.log('No existing authentication found, user needs to log in');
+      console.log('Auth: checkAuthStatus not authenticated');
       setUser(null);
     } finally {
+      console.log('Auth: checkAuthStatus end');
       setIsLoading(false);
     }
   };
@@ -33,20 +37,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      console.log('Auth: login start', username);
       const response = await apiService.login({ username, password });
       
       // Backend returns {message: "login successful"} and sets cookie
       if (response.message === 'login successful') {
+        console.log('Auth: login ok, fetching me');
         // Fetch user data with permissions
         const userData = await apiService.getCurrentUser();
+        console.log('Auth: me', userData?.username, userData?.id);
         setUser(userData);
         return true;
       }
+      console.log('Auth: login unexpected response', response);
       return false;
     } catch (error) {
       console.error('Login failed:', error);
       return false;
     } finally {
+      console.log('Auth: login end');
       setIsLoading(false);
     }
   };

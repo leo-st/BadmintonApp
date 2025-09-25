@@ -28,6 +28,10 @@ export const LoginScreen: React.FC = () => {
     }
   };
 
+  const handleDemoLogin = async () => {
+    await login('Švicarac', 'password123');
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -70,10 +74,14 @@ export const LoginScreen: React.FC = () => {
 
         <View style={styles.sampleAccounts}>
           <Text style={styles.sampleTitle}>Sample Accounts:</Text>
-          <Text style={styles.sampleText}>alice / password123</Text>
-          <Text style={styles.sampleText}>bob / password123</Text>
-          <Text style={styles.sampleText}>charlie / password123</Text>
-          <Text style={styles.sampleText}>diana / password123</Text>
+          <Text style={styles.sampleText}>Švicarac / password123 (Admin)</Text>
+          <Text style={styles.sampleText}>Šampion / password123</Text>
+          <Text style={styles.sampleText}>Vice / password123</Text>
+          <Text style={styles.sampleText}>Rokich / password123</Text>
+
+          <TouchableOpacity style={[styles.button, { marginTop: 12 }]} onPress={handleDemoLogin} disabled={isLoading}>
+            <Text style={styles.buttonText}>Login as Švicarac (demo)</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </KeyboardAvoidingView>

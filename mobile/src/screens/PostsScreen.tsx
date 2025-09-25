@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,15 +11,18 @@ import {
   Image,
   Modal,
 } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { Platform } from 'react-native';
+import { MatchesScreen } from './MatchesScreen';
+import { TournamentLeaderboardScreen } from './TournamentLeaderboardScreen';
+// Removed useFocusEffect to avoid requiring navigation context on web
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { Post, PostCreate, PostUpdate, Comment, CommentCreate, CommentUpdate, Attachment, AttachmentCreate } from '../types';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 
-export const PostsScreen = () => {
+export const PostsScreen = ({ navigation }: any) => {
   const { user } = useAuth();
-  const navigation = useNavigation();
+  const [webTab, setWebTab] = useState<'feed' | 'matches' | 'tournaments'>('feed');
   
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +44,11 @@ export const PostsScreen = () => {
   const [attachmentsToDelete, setAttachmentsToDelete] = useState<{ [postId: number]: number[] }>({});
 
   const navigateToUserProfile = (userId: number) => {
-    (navigation as any).navigate('Profile', { userId });
+    if (navigation && typeof navigation.navigate === 'function') {
+      navigation.navigate('Profile', { userId });
+    } else {
+      console.log('Navigation not available, cannot open Profile');
+    }
   };
 
   const loadPosts = useCallback(async () => {
@@ -51,6 +58,10 @@ export const PostsScreen = () => {
       
       // Use normalized endpoint for better performance
       const response = await apiService.getPostsNormalized({ limit: 20 });
+      console.log('Feed: /posts/normalized response', {
+        posts: Array.isArray(response?.posts) ? response.posts.length : 'n/a',
+        users: response?.users ? Object.keys(response.users).length : 'n/a',
+      });
       
       // Reconstruct full post objects by joining posts with users
       const reconstructedPosts: Post[] = response.posts.map(post => {
@@ -61,21 +72,20 @@ export const PostsScreen = () => {
         };
       });
       
+      console.log('Feed: reconstructed posts', reconstructedPosts.length);
       setPosts(reconstructedPosts);
     } catch (error) {
-      console.error('Failed to load posts:', error);
-      console.error('Error details:', error);
+      console.error('Feed: failed to load posts', error);
       setError('Failed to load posts');
     } finally {
       setLoading(false);
     }
   }, [user?.id, user?.username]);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadPosts();
-    }, [loadPosts])
-  );
+  // Load posts on mount and when dependencies change
+  useEffect(() => {
+    loadPosts();
+  }, [loadPosts]);
 
   const createPost = async () => {
     if (!newPostContent.trim() && newPostAttachments.length === 0) return;
@@ -487,8 +497,15 @@ export const PostsScreen = () => {
     );
   }
 
+  // Simple web tabs inside feed to avoid nav issues
+  if (Platform.OS === 'web' && webTab !== 'feed') {
+    return webTab === 'matches' ? <MatchesScreen /> : <TournamentLeaderboardScreen />;
+  }
+
   return (
     <View style={styles.container}>
+
+      {/* Remove debug banner in production */}
 
       {/* Create Post Form */}
       {showCreatePost && (
@@ -555,7 +572,85 @@ export const PostsScreen = () => {
         </View>
       )}
 
-      <ScrollView style={styles.postsList}>
+      {Platform.OS === 'web' ? (
+        <ScrollView style={[styles.postsList, { minHeight: 0 }]}> 
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 8 }}>
+            <Text onPress={()=>setWebTab('feed')} style={{ color: webTab==='feed' ? '#007AFF' : '#666' }}>Feed</Text>
+            <Text onPress={()=>setWebTab('matches')} style={{ color: webTab==='matches' ? '#007AFF' : '#666' }}>Matches</Text>
+            <Text onPress={()=>setWebTab('tournaments')} style={{ color: webTab==='tournaments' ? '#007AFF' : '#666' }}>Tournaments</Text>
+          </View>
+          {posts.map((post) => {
+            const isOwner = user?.id === post.user_id;
+            const isEditing = editingPost[post.id];
+            
+            return (
+              <View key={post.id} style={styles.post}>
+                <View style={styles.postHeader}>
+                  <View style={styles.postAuthorContainer}>
+                    {post.user?.profile_picture_url ? (
+                      <Image 
+                        source={{ uri: `http://localhost:8000${post.user.profile_picture_url}` }}
+                        style={styles.postAuthorAvatar}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles.postAuthorAvatarPlaceholder}>
+                        <Text style={styles.postAuthorAvatarText}>👤</Text>
+                      </View>
+                    )}
+                    <TouchableOpacity onPress={() => post.user && navigateToUserProfile(post.user.id)}>
+                      <Text style={styles.postAuthor}>{post.user?.username || 'Unknown'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.postHeaderRight}>
+                    <Text style={styles.postDate}>{new Date(post.created_at).toLocaleDateString()}</Text>
+                    {isOwner && (
+                      <View style={styles.postActions}>
+                        <TouchableOpacity
+                          style={styles.actionButton}
+                          onPress={() => {
+                            if (isEditing) {
+                              editPost(post.id);
+                            } else {
+                              startEditingPost(post.id);
+                            }
+                          }}
+                        >
+                          <Text style={styles.actionButtonText}>
+                            {isEditing ? '💾' : '✏️'}
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.actionButton}
+                          onPress={() => deletePost(post.id)}
+                        >
+                          <Text style={styles.actionButtonText}>🗑️</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                {isEditing ? (
+                  <View style={styles.editContainer}>
+                    <TextInput
+                      style={styles.editInput}
+                      value={editPostContent[post.id] || ''}
+                      onChangeText={(text) => setEditPostContent(prev => ({ ...prev, [post.id]: text }))}
+                      multiline
+                      placeholder="Edit your post..."
+                    />
+                    
+                  </View>
+                ) : (
+                  <Text style={styles.postContent}>{post.content || ''}</Text>
+                )}
+              </View>
+            );
+          })}
+        </ScrollView>
+      ) : (
+        <ScrollView style={styles.postsList}>
         {posts.map((post) => {
           const isOwner = user?.id === post.user_id;
           const isEditing = editingPost[post.id];
@@ -895,7 +990,8 @@ export const PostsScreen = () => {
             <Text style={styles.emptySubtext}>Be the first to share something!</Text>
           </View>
         )}
-      </ScrollView>
+        </ScrollView>
+      )}
       
       {/* Attachment Modal */}
       {Object.keys(showAttachmentModal).map(attachmentId => {

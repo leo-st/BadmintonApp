@@ -1,8 +1,14 @@
+import 'react-native-gesture-handler';
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+// Force web to use @react-navigation/stack explicitly
+// (native-stack can cause blank screens on web)
+import { enableScreens } from 'react-native-screens';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { MainScreen } from './src/screens/MainScreen';
@@ -21,6 +27,10 @@ import { PostsScreen } from './src/screens/PostsScreen';
 
 const Stack = createStackNavigator();
 
+// Disable native screens on web to avoid blank rendering
+// Disable native screens entirely to avoid web blank rendering
+enableScreens(false);
+
 function AppContent() {
   const { user, isLoading } = useAuth();
 
@@ -33,8 +43,46 @@ function AppContent() {
     );
   }
 
+  const linking = Platform.OS === 'web' ? undefined : ({
+    prefixes: [typeof window !== 'undefined' ? window.location.origin + '/' : '/'] as string[],
+    config: {
+      screens: {
+        Login: 'login',
+        Main: '',
+        Posts: 'posts',
+        Matches: 'matches',
+        RecordMatch: 'record',
+        Profile: 'profile/:userId?',
+        Admin: 'admin',
+        Verification: 'verification',
+        Tournament: 'tournament',
+        TournamentLeaderboard: 'leaderboard',
+        MyInvitations: 'invitations',
+        Reports: 'reports',
+        CreateReport: 'reports/create',
+        ReportDetail: 'reports/:id',
+      },
+    },
+  } as const);
+
+  const navProps: any = {};
+  if (linking) navProps.linking = linking as any;
+
+  // Web-only minimal stack with safe screens (no animated menu)
+  if (Platform.OS === 'web') {
+    return (
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="WebMain" screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="WebMain" component={WebMainScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+        </Stack.Navigator>
+        <StatusBar style="auto" />
+      </NavigationContainer>
+    );
+  }
+
   return (
-    <NavigationContainer>
+    <NavigationContainer {...navProps}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           <>
@@ -77,8 +125,43 @@ const styles = StyleSheet.create({
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
+
+// --- WebMainScreen: simple header + tabs, no animated menu ---
+import { useState } from 'react';
+import { View as RNView, Text as RNText, TouchableOpacity as RNTouchableOpacity } from 'react-native';
+const WebMainScreen: React.FC = () => {
+  const [tab, setTab] = useState<'feed' | 'matches' | 'tournaments'>('feed');
+
+  return (
+    <RNView style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+      <RNView style={{ backgroundColor: '#007AFF', paddingHorizontal: 16, paddingVertical: 12 }}>
+        <RNText style={{ color: 'white', fontWeight: 'bold', fontSize: 20, textAlign: 'center' }}>🏸 Badminton App</RNText>
+      </RNView>
+      <RNView style={{ flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e1e5e9', paddingVertical: 8, justifyContent: 'space-evenly' }}>
+        <RNTouchableOpacity onPress={()=>setTab('feed')} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: tab==='feed' ? '#e8f2ff' : '#f7f7f7', borderWidth: 1, borderColor: '#d0d7de' }}>
+          <RNText style={{ fontWeight: '600', color: '#111' }}>Feed</RNText>
+        </RNTouchableOpacity>
+        <RNTouchableOpacity onPress={()=>setTab('matches')} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: tab==='matches' ? '#e8f2ff' : '#f7f7f7', borderWidth: 1, borderColor: '#d0d7de' }}>
+          <RNText style={{ fontWeight: '600', color: '#111' }}>Matches</RNText>
+        </RNTouchableOpacity>
+        <RNTouchableOpacity onPress={()=>setTab('tournaments')} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: tab==='tournaments' ? '#e8f2ff' : '#f7f7f7', borderWidth: 1, borderColor: '#d0d7de' }}>
+          <RNText style={{ fontWeight: '600', color: '#111' }}>Tournaments</RNText>
+        </RNTouchableOpacity>
+      </RNView>
+      <RNView style={{ flex: 1, minHeight: 0 }}>
+        {tab === 'feed' && <PostsScreen navigation={null as any} />}
+        {tab === 'matches' && <MatchesScreen />}
+        {tab === 'tournaments' && <TournamentLeaderboardScreen />}
+      </RNView>
+    </RNView>
+  );
+};

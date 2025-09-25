@@ -6,9 +6,41 @@ const API_BASE_URL = config.API_BASE_URL;
 
 class ApiService {
   private baseUrl: string;
+  private static WEB_TOKEN_STORAGE_KEY = 'auth_access_token';
+  private isWeb: boolean;
 
   constructor(baseUrl: string = API_BASE_URL) {
     this.baseUrl = baseUrl;
+    this.isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+  }
+
+  private getStoredToken(): string | null {
+    if (!this.isWeb) return null;
+    try {
+      return window.localStorage.getItem(ApiService.WEB_TOKEN_STORAGE_KEY);
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  private storeToken(token: string | undefined) {
+    if (!this.isWeb) return;
+    try {
+      if (token) {
+        window.localStorage.setItem(ApiService.WEB_TOKEN_STORAGE_KEY, token);
+      }
+    } catch (_e) {
+      // ignore
+    }
+  }
+
+  private clearToken() {
+    if (!this.isWeb) return;
+    try {
+      window.localStorage.removeItem(ApiService.WEB_TOKEN_STORAGE_KEY);
+    } catch (_e) {
+      // ignore
+    }
   }
 
   private async request<T>(
@@ -22,13 +54,19 @@ class ApiService {
     if (!(options.body instanceof FormData)) {
       headers['Content-Type'] = 'application/json';
     }
+    // Attach Authorization header for web PWA when token exists
+    const token = this.getStoredToken();
+    if (this.isWeb && token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     
     const config: RequestInit = {
       headers: {
         ...headers,
         ...options.headers,
       },
-      credentials: 'include', // Important for cookie-based auth
+      // Use cookies only for native apps; omit for web to avoid cross-site cookie issues
+      credentials: this.isWeb ? 'omit' : 'include',
       ...options,
     };
 
@@ -57,7 +95,7 @@ class ApiService {
 
       // Handle 204 No Content responses
       if (response.status === 204) {
-        return null;
+        return undefined as unknown as T;
       }
 
       return await response.json();
@@ -68,14 +106,21 @@ class ApiService {
   }
 
   // Auth endpoints
-  async login(credentials: UserLogin): Promise<{ message: string }> {
-    return this.request('/auth/login', {
+  async login(credentials: UserLogin): Promise<{ message: string; access_token?: string; token_type?: string }> {
+    const res = await this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
+    // Store token on web for PWA flow
+    if (res && typeof res === 'object' && 'access_token' in res) {
+      this.storeToken((res as any).access_token);
+    }
+    return res as any;
   }
 
   async logout(): Promise<void> {
+    // Clear token on web regardless of server response
+    this.clearToken();
     return this.request('/auth/logout', {
       method: 'POST',
     });

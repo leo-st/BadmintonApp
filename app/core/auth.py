@@ -50,8 +50,13 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
         detail="Could not validate credentials",
     )
     
-    # Get token from cookie
-    token = request.cookies.get("access_token")
+    # Prefer Authorization header (Bearer token) for web/PWA, fall back to cookie
+    token: Optional[str] = None
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.lower().startswith("bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+    if not token:
+        token = request.cookies.get("access_token")
     if not token:
         raise credentials_exception
     

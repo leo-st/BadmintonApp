@@ -8,6 +8,7 @@ import {
   Dimensions,
   SafeAreaView,
   Alert,
+  Platform,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
@@ -35,7 +36,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   const [pendingVerifications, setPendingVerifications] = useState(0);
   const [pendingInvitations, setPendingInvitations] = useState(0);
   const [unseenReports, setUnseenReports] = useState(0);
-  const navigation = useNavigation();
+  const navigation = useNavigation() as any;
   const { user, hasPermission, isAdmin, logout } = useAuth();
 
   useEffect(() => {
@@ -163,6 +164,47 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     if (item.admin && !isAdmin()) return false;
     return true;
   });
+
+  // Simplified web layout to avoid overlay issues
+  if (Platform.OS === 'web') {
+    return (
+      <SafeAreaView style={[styles.container, { minHeight: '100vh' as any }]}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{title || '🏸 Badminton App'}</Text>
+          <View style={styles.headerRight} />
+        </View>
+        {showTabs && activeTab && onTabChange && (
+          <View style={styles.tabBar}>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'feed' && styles.activeTab]}
+              onPress={() => onTabChange('feed')}
+            >
+              <Text style={[styles.tabIcon, activeTab === 'feed' && styles.activeTabIcon]}>📱</Text>
+              <Text style={[styles.tabLabel, activeTab === 'feed' && styles.activeTabLabel]}>Feed</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'matches' && styles.activeTab]}
+              onPress={() => onTabChange('matches')}
+            >
+              <Text style={[styles.tabIcon, activeTab === 'matches' && styles.activeTabIcon]}>🏸</Text>
+              <Text style={[styles.tabLabel, activeTab === 'matches' && styles.activeTabLabel]}>Matches</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'tournaments' && styles.activeTab]}
+              onPress={() => onTabChange('tournaments')}
+            >
+              <Text style={[styles.tabIcon, activeTab === 'tournaments' && styles.activeTabIcon]}>🏆</Text>
+              <Text style={[styles.tabLabel, activeTab === 'tournaments' && styles.activeTabLabel]}>Tournaments</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        <View style={[styles.content, { backgroundColor: '#e6f7ff' }]}>
+          <Text style={{ fontSize: 12, color: '#0066cc', padding: 6 }}>WEB: content mounted</Text>
+          {children}
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -342,7 +384,6 @@ const styles = StyleSheet.create({
     height: 2,
     backgroundColor: 'white',
     borderRadius: 1,
-    transition: 'all 0.3s ease',
   },
   hamburgerLineOpen: {
     backgroundColor: 'white',
@@ -422,6 +463,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    minHeight: 0, // Important for web to prevent flex child from collapsing
   },
   menuOverlay: {
     position: 'absolute',
