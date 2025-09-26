@@ -21,7 +21,7 @@ from app.models.tournament_invitations import TournamentParticipant, TournamentI
 
 class User(Base):
     __tablename__ = "User"
-    __table_args__ = {"schema": "badminton"}
+    # Removed schema for Railway compatibility
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True, nullable=False)
@@ -106,18 +106,18 @@ class User(Base):
 
 class Match(Base):
     __tablename__ = "Match"
-    __table_args__ = {"schema": "badminton"}
+    # Removed schema for Railway compatibility
 
     id = Column(Integer, primary_key=True, index=True)
-    player1_id = Column(Integer, ForeignKey("badminton.User.id"), nullable=False)
-    player2_id = Column(Integer, ForeignKey("badminton.User.id"), nullable=False)
+    player1_id = Column(Integer, ForeignKey("User.id"), nullable=False)
+    player2_id = Column(Integer, ForeignKey("User.id"), nullable=False)
     player1_score = Column(Integer, nullable=False)
     player2_score = Column(Integer, nullable=False)
     match_type = Column(Enum(MatchType), nullable=False)
     status = Column(Enum(MatchStatus), default=MatchStatus.PENDING_VERIFICATION)
-    submitted_by_id = Column(Integer, ForeignKey("badminton.User.id"), nullable=False)
-    verified_by_id = Column(Integer, ForeignKey("badminton.User.id"), nullable=True)
-    tournament_id = Column(Integer, ForeignKey("badminton.Tournament.id"), nullable=True)
+    submitted_by_id = Column(Integer, ForeignKey("User.id"), nullable=False)
+    verified_by_id = Column(Integer, ForeignKey("User.id"), nullable=True)
+    tournament_id = Column(Integer, ForeignKey("Tournament.id"), nullable=True)
     notes = Column(Text, nullable=True)
     match_date = Column(DateTime(timezone=True), server_default=func.now())
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -126,8 +126,8 @@ class Match(Base):
     # Player verification fields
     player1_verified = Column(Boolean, default=False, nullable=False)
     player2_verified = Column(Boolean, default=False, nullable=False)
-    player1_verified_by_id = Column(Integer, ForeignKey("badminton.User.id"), nullable=True)
-    player2_verified_by_id = Column(Integer, ForeignKey("badminton.User.id"), nullable=True)
+    player1_verified_by_id = Column(Integer, ForeignKey("User.id"), nullable=True)
+    player2_verified_by_id = Column(Integer, ForeignKey("User.id"), nullable=True)
 
     # Relationships
     player1 = relationship("User", foreign_keys=[player1_id], back_populates="player1_matches")
@@ -207,7 +207,7 @@ class Match(Base):
 
 class Tournament(Base):
     __tablename__ = "Tournament"
-    __table_args__ = {"schema": "badminton"}
+    # Removed schema for Railway compatibility
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)

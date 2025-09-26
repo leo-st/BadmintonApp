@@ -6,10 +6,10 @@ from app.core.database import Base
 
 class Report(Base):
     __tablename__ = "reports"
-    __table_args__ = {"schema": "badminton"}
+    # Removed schema for Railway compatibility
 
     id = Column(Integer, primary_key=True, index=True)
-    created_by_id = Column(Integer, ForeignKey("badminton.User.id", ondelete="CASCADE"), nullable=False)
+    created_by_id = Column(Integer, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
     event_date = Column(Date, nullable=False)  # Date when the event happened
     content = Column(Text, nullable=False)     # Free text description
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -25,12 +25,12 @@ class ReportReaction(Base):
     __tablename__ = "report_reactions"
     __table_args__ = (
         UniqueConstraint('report_id', 'user_id', 'emoji', name='unique_user_emoji_per_report'),
-        {"schema": "badminton"}
+        {}
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    report_id = Column(Integer, ForeignKey("badminton.reports.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("badminton.User.id", ondelete="CASCADE"), nullable=False)
+    report_id = Column(Integer, ForeignKey("reports.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
     emoji = Column(String(10), nullable=False)  # Store emoji as string
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

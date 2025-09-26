@@ -21,10 +21,10 @@ from app.core.database import Base
 
 class Post(Base):
     __tablename__ = "Post"
-    __table_args__ = {"schema": "badminton"}
+    # Removed schema for Railway compatibility
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("badminton.User.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -40,13 +40,13 @@ class Post(Base):
 
 class Comment(Base):
     __tablename__ = "Comment"
-    __table_args__ = {"schema": "badminton"}
+    # Removed schema for Railway compatibility
 
     id = Column(Integer, primary_key=True, index=True)
-    post_id = Column(Integer, ForeignKey("badminton.Post.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("badminton.User.id", ondelete="CASCADE"), nullable=False)
+    post_id = Column(Integer, ForeignKey("Post.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
     content = Column(Text, nullable=False)
-    parent_comment_id = Column(Integer, ForeignKey("badminton.Comment.id", ondelete="CASCADE"), nullable=True)
+    parent_comment_id = Column(Integer, ForeignKey("Comment.id", ondelete="CASCADE"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     is_deleted = Column(Boolean, default=False, nullable=False)
@@ -67,12 +67,12 @@ class Attachment(Base):
             "(post_id IS NOT NULL AND comment_id IS NULL) OR (post_id IS NULL AND comment_id IS NOT NULL)",
             name="attachment_either_post_or_comment"
         ),
-        {"schema": "badminton"}
+        {}
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    post_id = Column(Integer, ForeignKey("badminton.Post.id", ondelete="CASCADE"), nullable=True)
-    comment_id = Column(Integer, ForeignKey("badminton.Comment.id", ondelete="CASCADE"), nullable=True)
+    post_id = Column(Integer, ForeignKey("Post.id", ondelete="CASCADE"), nullable=True)
+    comment_id = Column(Integer, ForeignKey("Comment.id", ondelete="CASCADE"), nullable=True)
     file_type = Column(Enum(AttachmentType), nullable=False)
     file_path = Column(String(500), nullable=False)
     file_name = Column(String(255), nullable=False)
@@ -90,12 +90,12 @@ class PostReaction(Base):
     __tablename__ = "PostReaction"
     __table_args__ = (
         UniqueConstraint('post_id', 'user_id', 'emoji', name='unique_user_emoji_per_post'),
-        {"schema": "badminton"}
+        {}
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    post_id = Column(Integer, ForeignKey("badminton.Post.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("badminton.User.id", ondelete="CASCADE"), nullable=False)
+    post_id = Column(Integer, ForeignKey("Post.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
     emoji = Column(String(10), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -108,12 +108,12 @@ class CommentReaction(Base):
     __tablename__ = "CommentReaction"
     __table_args__ = (
         UniqueConstraint('comment_id', 'user_id', 'emoji', name='unique_user_emoji_per_comment'),
-        {"schema": "badminton"}
+        {}
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    comment_id = Column(Integer, ForeignKey("badminton.Comment.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("badminton.User.id", ondelete="CASCADE"), nullable=False)
+    comment_id = Column(Integer, ForeignKey("Comment.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
     emoji = Column(String(10), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

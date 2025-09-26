@@ -8,12 +8,12 @@ class TournamentParticipant(Base):
     __tablename__ = "tournament_participants"
     __table_args__ = (
         UniqueConstraint('tournament_id', 'user_id', name='unique_tournament_participant'),
-        {"schema": "badminton"}
+        
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    tournament_id = Column(Integer, ForeignKey("badminton.Tournament.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("badminton.User.id", ondelete="CASCADE"), nullable=False)
+    tournament_id = Column(Integer, ForeignKey("Tournament.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
     joined_at = Column(DateTime(timezone=True), server_default=func.now())
     is_active = Column(Boolean, default=True)
 
@@ -26,13 +26,13 @@ class TournamentInvitation(Base):
     __table_args__ = (
         CheckConstraint("status IN ('pending', 'accepted', 'declined', 'expired')", name='check_invitation_status'),
         UniqueConstraint('tournament_id', 'user_id', name='unique_tournament_invitation'),
-        {"schema": "badminton"}
+        
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    tournament_id = Column(Integer, ForeignKey("badminton.Tournament.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("badminton.User.id", ondelete="CASCADE"), nullable=False)
-    invited_by = Column(Integer, ForeignKey("badminton.User.id", ondelete="CASCADE"), nullable=False)
+    tournament_id = Column(Integer, ForeignKey("Tournament.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
+    invited_by = Column(Integer, ForeignKey("User.id", ondelete="CASCADE"), nullable=False)
     status = Column(String(20), nullable=False, default=InvitationStatus.PENDING.value)
     invited_at = Column(DateTime(timezone=True), server_default=func.now())
     responded_at = Column(DateTime(timezone=True))
