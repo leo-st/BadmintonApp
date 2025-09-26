@@ -19,8 +19,7 @@ class Role(Base):
     role_name = Column(Text, nullable=False, default="Neuer Benutzertyp")
     locked = Column(Boolean, nullable=False, default=True)
 
-    # Relationships
-    users = relationship("AccessControlUser", back_populates="role")
+    # Relationships - Note: User relationship is defined in models.py
     role_permissions = relationship("RolesPermissions", back_populates="role", lazy="joined")
     permissions = relationship("Permission", secondary="RolesPermissions", lazy="joined", overlaps="role_permissions")
 
@@ -49,24 +48,7 @@ class Permission(Base):
     role_permissions = relationship("RolesPermissions", back_populates="permission", overlaps="permissions")
 
 
-class AccessControlUser(Base):
-    __tablename__ = "User"
-    # Removed schema for Railway compatibility
-
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(255), unique=True, nullable=False)
-    email = Column(String(255), nullable=False)
-    first_name = Column(String(255), nullable=True)
-    last_name = Column(String(255), nullable=True)
-    enabled = Column(Boolean, nullable=False)
-    welcome_message = Column(Text, nullable=True)
-    language = Column(String(255), nullable=False, default="DE")
-    pw_hash = Column(String(255), nullable=False)
-    pw_reset_required = Column(Boolean, nullable=False, default=True)
-    role_id = Column(Integer, ForeignKey("Role.role_id"), nullable=True)
-
-    # Relationships
-    role = relationship("Role", back_populates="users")
+# AccessControlUser removed - using User from models.py to avoid duplicate table definition
 
 
 class RolesPermissions(Base):
