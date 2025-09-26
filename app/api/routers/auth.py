@@ -39,8 +39,8 @@ async def authenticate(
         key="access_token",
         value=access_token,
         httponly=True,
-        samesite="lax",   # Allow cross-origin requests for local development
-        secure=False,     # False for local development (HTTP)
+        samesite="none",   # Required for cross-origin HTTPS requests
+        secure=True,       # Required for HTTPS and SameSite=None
         max_age=settings.access_token_expire_minutes * 60
     )
     return response
@@ -56,5 +56,33 @@ async def logout(
     response.delete_cookie(
         key="access_token",
         path="/",
+        samesite="none",
+        secure=True
     )
     return response
+
+@router.get("/debug/users")
+async def debug_users(db: Session = Depends(get_db)):
+    """Debug endpoint to check users in database"""
+    from app.core.auth import get_password_hash
+    users = db.query(User).all()
+    result = []
+    for user in users:
+        result.append({
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "full_name": user.full_name,
+            "is_active": user.is_active,
+            "role_id": user.role_id,
+            "hash_preview": user.hashed_password[:50] + "..." if user.hashed_password else None
+        })
+    
+    # Also test password hashing
+    test_hash = get_password_hash("password123")
+    
+    return {
+        "users": result,
+        "test_hash_preview": test_hash[:50] + "...",
+        "total_users": len(result)
+    }
