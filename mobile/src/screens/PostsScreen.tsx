@@ -11,18 +11,15 @@ import {
   Image,
   Modal,
 } from 'react-native';
-import { Platform } from 'react-native';
-import { MatchesScreen } from './MatchesScreen';
-import { TournamentLeaderboardScreen } from './TournamentLeaderboardScreen';
-// Removed useFocusEffect to avoid requiring navigation context on web
+// Removed platform-specific imports that were causing rendering issues
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
+import config from '../config/environment';
 import { Post, PostCreate, PostUpdate, Comment, CommentCreate, CommentUpdate, Attachment, AttachmentCreate } from '../types';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 
 export const PostsScreen = ({ navigation }: any) => {
   const { user } = useAuth();
-  const [webTab, setWebTab] = useState<'feed' | 'matches' | 'tournaments'>('feed');
   
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -497,10 +494,7 @@ export const PostsScreen = ({ navigation }: any) => {
     );
   }
 
-  // Simple web tabs inside feed to avoid nav issues
-  if (Platform.OS === 'web' && webTab !== 'feed') {
-    return webTab === 'matches' ? <MatchesScreen /> : <TournamentLeaderboardScreen />;
-  }
+   // Remove complex web tab logic that might cause re-rendering issues
 
   return (
     <View style={styles.container}>
@@ -572,85 +566,7 @@ export const PostsScreen = ({ navigation }: any) => {
         </View>
       )}
 
-      {Platform.OS === 'web' ? (
-        <ScrollView style={[styles.postsList, { minHeight: 0 }]}> 
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 8 }}>
-            <Text onPress={()=>setWebTab('feed')} style={{ color: webTab==='feed' ? '#007AFF' : '#666' }}>Feed</Text>
-            <Text onPress={()=>setWebTab('matches')} style={{ color: webTab==='matches' ? '#007AFF' : '#666' }}>Matches</Text>
-            <Text onPress={()=>setWebTab('tournaments')} style={{ color: webTab==='tournaments' ? '#007AFF' : '#666' }}>Tournaments</Text>
-          </View>
-          {posts.map((post) => {
-            const isOwner = user?.id === post.user_id;
-            const isEditing = editingPost[post.id];
-            
-            return (
-              <View key={post.id} style={styles.post}>
-                <View style={styles.postHeader}>
-                  <View style={styles.postAuthorContainer}>
-                    {post.user?.profile_picture_url ? (
-                      <Image 
-                        source={{ uri: `http://localhost:8000${post.user.profile_picture_url}` }}
-                        style={styles.postAuthorAvatar}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View style={styles.postAuthorAvatarPlaceholder}>
-                        <Text style={styles.postAuthorAvatarText}>👤</Text>
-                      </View>
-                    )}
-                    <TouchableOpacity onPress={() => post.user && navigateToUserProfile(post.user.id)}>
-                      <Text style={styles.postAuthor}>{post.user?.username || 'Unknown'}</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <View style={styles.postHeaderRight}>
-                    <Text style={styles.postDate}>{new Date(post.created_at).toLocaleDateString()}</Text>
-                    {isOwner && (
-                      <View style={styles.postActions}>
-                        <TouchableOpacity
-                          style={styles.actionButton}
-                          onPress={() => {
-                            if (isEditing) {
-                              editPost(post.id);
-                            } else {
-                              startEditingPost(post.id);
-                            }
-                          }}
-                        >
-                          <Text style={styles.actionButtonText}>
-                            {isEditing ? '💾' : '✏️'}
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.actionButton}
-                          onPress={() => deletePost(post.id)}
-                        >
-                          <Text style={styles.actionButtonText}>🗑️</Text>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  </View>
-                </View>
-
-                {isEditing ? (
-                  <View style={styles.editContainer}>
-                    <TextInput
-                      style={styles.editInput}
-                      value={editPostContent[post.id] || ''}
-                      onChangeText={(text) => setEditPostContent(prev => ({ ...prev, [post.id]: text }))}
-                      multiline
-                      placeholder="Edit your post..."
-                    />
-                    
-                  </View>
-                ) : (
-                  <Text style={styles.postContent}>{post.content || ''}</Text>
-                )}
-              </View>
-            );
-          })}
-        </ScrollView>
-      ) : (
-        <ScrollView style={styles.postsList}>
+      <ScrollView style={styles.postsList}>
         {posts.map((post) => {
           const isOwner = user?.id === post.user_id;
           const isEditing = editingPost[post.id];
@@ -662,7 +578,7 @@ export const PostsScreen = ({ navigation }: any) => {
                 <View style={styles.postAuthorContainer}>
                   {post.user?.profile_picture_url ? (
                     <Image 
-                      source={{ uri: `http://localhost:8000${post.user.profile_picture_url}` }}
+                      source={{ uri: `${config.API_BASE_URL}${post.user.profile_picture_url}` }}
                       style={styles.postAuthorAvatar}
                       resizeMode="cover"
                     />
@@ -876,7 +792,7 @@ export const PostsScreen = ({ navigation }: any) => {
                             <View style={styles.commentAuthorContainer}>
                               {comment.user?.profile_picture_url ? (
                                 <Image 
-                                  source={{ uri: `http://localhost:8000${comment.user.profile_picture_url}` }}
+                                  source={{ uri: `${config.API_BASE_URL}${comment.user.profile_picture_url}` }}
                                   style={styles.commentAuthorAvatar}
                                   resizeMode="cover"
                                 />
@@ -990,8 +906,7 @@ export const PostsScreen = ({ navigation }: any) => {
             <Text style={styles.emptySubtext}>Be the first to share something!</Text>
           </View>
         )}
-        </ScrollView>
-      )}
+      </ScrollView>
       
       {/* Attachment Modal */}
       {Object.keys(showAttachmentModal).map(attachmentId => {
@@ -1051,10 +966,11 @@ export const PostsScreen = ({ navigation }: any) => {
         );
       })}
       
-      {/* Floating Action Button */}
+      {/* Floating Action Button - Fixed to viewport on web */}
       <FloatingActionButton
         onPress={() => setShowCreatePost(!showCreatePost)}
         icon="+"
+        fixed={true}
       />
     </View>
   );

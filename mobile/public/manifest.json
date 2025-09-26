@@ -6,9 +6,10 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#007AFF",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
+  "categories": ["sports", "games", "lifestyle"],
   "icons": [
     {
       "src": "/icon.png",
@@ -21,6 +22,40 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Record Match",
+      "short_name": "Record",
+      "description": "Quickly record a new badminton match",
+      "url": "/record",
+      "icons": [
+        {
+          "src": "/icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "View Matches",
+      "short_name": "Matches",
+      "description": "View recent matches",
+      "url": "/matches",
+      "icons": [
+        {
+          "src": "/icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icon.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow"
     }
   ]
 }

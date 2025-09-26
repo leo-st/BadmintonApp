@@ -9,18 +9,35 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Platform } from 'react-native';
 import { Match } from '../types';
 import { apiService } from '../services/api';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 
-export const MatchesScreen: React.FC = () => {
-  const navigation = useNavigation();
+interface MatchesScreenProps {
+  onNavigateToRecordMatch?: () => void;
+  refreshTrigger?: number;
+}
+
+export const MatchesScreen: React.FC<MatchesScreenProps> = ({ onNavigateToRecordMatch, refreshTrigger }) => {
+  // Only use navigation on non-web platforms
+  let navigation: any = null;
+  if (Platform.OS !== 'web') {
+    navigation = useNavigation();
+  }
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadMatches();
   }, []);
+
+  // Refresh when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      loadMatches();
+    }
+  }, [refreshTrigger]);
 
   const loadMatches = async () => {
     try {
@@ -86,7 +103,7 @@ export const MatchesScreen: React.FC = () => {
             </Text>
             <TouchableOpacity
               style={styles.recordButton}
-              onPress={() => navigation.navigate('RecordMatch' as never)}
+              onPress={() => navigation && navigation.navigate('RecordMatch' as never)}
             >
               <Text style={styles.recordButtonText}>Record New Match</Text>
             </TouchableOpacity>
@@ -141,10 +158,17 @@ export const MatchesScreen: React.FC = () => {
         )}
       </ScrollView>
       
-      {/* Floating Action Button */}
+      {/* Floating Action Button - Fixed to viewport on web */}
       <FloatingActionButton
-        onPress={() => navigation.navigate('RecordMatch' as never)}
+        onPress={() => {
+          if (Platform.OS === 'web' && onNavigateToRecordMatch) {
+            onNavigateToRecordMatch();
+          } else if (navigation) {
+            navigation.navigate('RecordMatch' as never);
+          }
+        }}
         icon="+"
+        fixed={true}
       />
     </View>
   );

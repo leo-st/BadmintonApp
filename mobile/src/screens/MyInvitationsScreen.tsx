@@ -9,7 +9,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { Platform } from 'react-native';
 import { apiService } from '../services/api';
 import { TournamentInvitation } from '../types';
 import { MainNavigation } from '../components/MainNavigation';
@@ -32,11 +32,10 @@ export const MyInvitationsScreen: React.FC = () => {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      loadInvitations();
-    }, [])
-  );
+  // Load invitations on mount
+  useEffect(() => {
+    loadInvitations();
+  }, []);
 
   const handleRefresh = () => {
     setRefreshing(true);

@@ -344,7 +344,9 @@ def update_existing_report(
             "id": report.created_by.id,
             "username": report.created_by.username,
             "full_name": report.created_by.full_name,
-            "email": report.created_by.email
+            "email": report.created_by.email,
+            "is_active": report.created_by.is_active,
+            "created_at": report.created_by.created_at
         } if report.created_by else None,
         "reactions": [],
         "reaction_counts": reaction_counts

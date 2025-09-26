@@ -8,13 +8,22 @@ import {
   Alert,
   TextInput,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { User, MatchCreate, Tournament } from '../types';
 import { apiService } from '../services/api';
 
-export const RecordMatchScreen: React.FC = () => {
-  const navigation = useNavigation();
+interface RecordMatchScreenProps {
+  onBackToMatches?: () => void;
+}
+
+export const RecordMatchScreen: React.FC<RecordMatchScreenProps> = ({ onBackToMatches }) => {
+  // Only use navigation on non-web platforms
+  let navigation: any = null;
+  if (Platform.OS !== 'web') {
+    navigation = useNavigation();
+  }
   const [users, setUsers] = useState<User[]>([]);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [tournamentParticipants, setTournamentParticipants] = useState<User[]>([]);
@@ -126,9 +135,19 @@ export const RecordMatchScreen: React.FC = () => {
       };
 
       await apiService.createMatch(matchData);
-      Alert.alert('Success', 'Match recorded successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      
+      // Reset form and handle navigation
+      resetForm();
+      
+      // Handle navigation immediately after success, then show alert
+      console.log('RecordMatch success - Platform:', Platform.OS, 'onBackToMatches:', !!onBackToMatches);
+      if (Platform.OS === 'web' && onBackToMatches) {
+        onBackToMatches();
+      } else if (navigation) {
+        navigation.goBack();
+      }
+      
+      Alert.alert('Success', 'Match recorded successfully!');
     } catch (error) {
       console.error('Failed to create match:', error);
       Alert.alert('Error', 'Failed to record match. Please try again.');
@@ -161,7 +180,13 @@ export const RecordMatchScreen: React.FC = () => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            if (Platform.OS === 'web' && onBackToMatches) {
+              onBackToMatches();
+            } else if (navigation) {
+              navigation.goBack();
+            }
+          }}
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>

@@ -11,11 +11,15 @@
     "dev:fast": "expo start --ios --clear",
     "dev:web": "expo start --web --clear",
     "build:pwa": "./scripts/build-pwa.sh",
-    "build:web": "expo export --platform web",
-    "preview:pwa": "npx serve dist -s",
+    "build:web": "expo export --platform web --output-dir web-build",
+    "preview:pwa": "npx serve dist -s -p 3000",
+    "preview:web": "npx serve web-build -s -p 3000",
+    "deploy:vercel": "npm run build:pwa && vercel --prod --cwd dist",
+    "deploy:netlify": "npm run build:pwa && netlify deploy --prod --dir dist",
     "env:dev": "node scripts/switch-env.js development",
     "env:prod": "node scripts/switch-env.js production",
-    "env:local": "node scripts/switch-env.js localhost"
+    "env:local": "node scripts/switch-env.js localhost",
+    "test:pwa": "npm run build:pwa && npm run preview:pwa"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

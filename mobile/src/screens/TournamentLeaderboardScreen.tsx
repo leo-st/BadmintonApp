@@ -10,12 +10,17 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Platform } from 'react-native';
 import { apiService } from '../services/api';
 import { Tournament, TournamentLeaderboard } from '../types';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 
 export const TournamentLeaderboardScreen: React.FC = () => {
-  const navigation = useNavigation();
+  // Only use navigation on non-web platforms
+  let navigation: any = null;
+  if (Platform.OS !== 'web') {
+    navigation = useNavigation();
+  }
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [leaderboard, setLeaderboard] = useState<TournamentLeaderboard | null>(null);

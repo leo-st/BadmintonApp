@@ -11,13 +11,24 @@ import {
   ActivityIndicator,
   SafeAreaView,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { Platform } from 'react-native';
 import { Report } from '../types';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { MainNavigation } from '../components/MainNavigation';
 
-const ReportsScreen = ({ navigation }: any) => {
+interface ReportsScreenProps {
+  onNavigateToCreateReport?: () => void;
+  onNavigateToReportDetail?: (report: any) => void;
+}
+
+const ReportsScreen: React.FC<ReportsScreenProps> = ({ onNavigateToCreateReport, onNavigateToReportDetail }) => {
+  // Only use navigation on non-web platforms
+  let navigation: any = null;
+  if (Platform.OS !== 'web') {
+    // For mobile, we'd need to get navigation from useNavigation hook
+    // but since this screen is now rendered directly, we'll handle it differently
+  }
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -79,12 +90,11 @@ const ReportsScreen = ({ navigation }: any) => {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      loadReports(true);
-      loadUnseenCount();
-    }, [searchText, dateFrom, dateTo])
-  );
+  // Load reports on mount and when dependencies change
+  useEffect(() => {
+    loadReports(true);
+    loadUnseenCount();
+  }, [searchText, dateFrom, dateTo]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -158,7 +168,11 @@ const ReportsScreen = ({ navigation }: any) => {
         if (!item.has_seen) {
           markReportAsSeen(item.id);
         }
-        navigation.navigate('ReportDetail', { report: item });
+        if (Platform.OS === 'web' && onNavigateToReportDetail) {
+          onNavigateToReportDetail(item);
+        } else if (navigation) {
+          navigation.navigate('ReportDetail', { report: item });
+        }
       }}
     >
       <View style={styles.reportHeader}>
@@ -187,7 +201,13 @@ const ReportsScreen = ({ navigation }: any) => {
             ))}
             <TouchableOpacity 
               style={styles.addReactionButton}
-              onPress={() => navigation.navigate('ReportDetail', { report: item })}
+              onPress={() => {
+                if (Platform.OS === 'web' && onNavigateToReportDetail) {
+                  onNavigateToReportDetail(item);
+                } else if (navigation) {
+                  navigation.navigate('ReportDetail', { report: item });
+                }
+              }}
             >
               <Text style={styles.addReactionText}>+</Text>
             </TouchableOpacity>
@@ -254,7 +274,13 @@ const ReportsScreen = ({ navigation }: any) => {
         </View>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => navigation.navigate('CreateReport')}
+          onPress={() => {
+            if (Platform.OS === 'web' && onNavigateToCreateReport) {
+              onNavigateToCreateReport();
+            } else if (navigation) {
+              navigation.navigate('CreateReport');
+            }
+          }}
         >
           <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>

@@ -16,6 +16,8 @@ export const LoginScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const { login, isLoading } = useAuth();
 
+  console.log('LoginScreen render', { isLoading });
+
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
       Alert.alert('Error', 'Please enter both username and password');

@@ -26,10 +26,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Auth: checkAuthStatus success', userData?.username, userData?.id);
       setUser(userData);
     } catch (error) {
-      console.log('Auth: checkAuthStatus not authenticated');
+      console.log('Auth: checkAuthStatus not authenticated', error);
       setUser(null);
     } finally {
-      console.log('Auth: checkAuthStatus end');
+      console.log('Auth: checkAuthStatus end - setting loading to false');
       setIsLoading(false);
     }
   };

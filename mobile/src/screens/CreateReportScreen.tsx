@@ -15,8 +15,18 @@ import {
 import { Report, ReportCreate, ReportUpdate } from '../types';
 import { apiService } from '../services/api';
 
-const CreateReportScreen = ({ navigation, route }: any) => {
-  const { report } = route.params || {};
+interface CreateReportScreenProps {
+  report?: Report;
+  onBackToReports?: () => void;
+}
+
+const CreateReportScreen: React.FC<CreateReportScreenProps> = ({ report, onBackToReports }) => {
+  // Only use navigation on non-web platforms
+  let navigation: any = null;
+  if (Platform.OS !== 'web') {
+    // For mobile, we'd need navigation from useNavigation hook
+  }
+  
   const isEditing = !!report;
   
   const [eventDate, setEventDate] = useState(
@@ -44,8 +54,44 @@ const CreateReportScreen = ({ navigation, route }: any) => {
           event_date: eventDate,
           content: content.trim(),
         };
-        await apiService.updateReport(report.id, updateData);
-        Alert.alert('Success', 'Report updated successfully');
+        
+        try {
+          await apiService.updateReport(report.id, updateData);
+          Alert.alert('Success', 'Report updated successfully');
+          
+          // Navigate back after successful update
+          if (Platform.OS === 'web' && onBackToReports) {
+            onBackToReports();
+          } else if (navigation) {
+            navigation.goBack();
+          }
+        } catch (updateError) {
+          console.error('Update error details:', updateError);
+          
+          // Check if it's a backend 500 error (but changes might be saved)
+          const errorMessage = updateError.toString();
+          if (errorMessage.includes('500') || errorMessage.includes('Failed to fetch') || errorMessage.includes('CORS')) {
+            Alert.alert(
+              'Backend Error (Changes May Be Saved)',
+              'The server had an issue responding, but your changes were likely saved successfully. Go back to check?',
+              [
+                { text: 'Stay Here', style: 'cancel' },
+                { 
+                  text: 'Go Back & Check', 
+                  onPress: () => {
+                    if (Platform.OS === 'web' && onBackToReports) {
+                      onBackToReports();
+                    } else if (navigation) {
+                      navigation.goBack();
+                    }
+                  }
+                }
+              ]
+            );
+          } else {
+            Alert.alert('Error', 'Failed to update report: ' + errorMessage);
+          }
+        }
       } else {
         const newReport: ReportCreate = {
           event_date: eventDate,
@@ -53,9 +99,14 @@ const CreateReportScreen = ({ navigation, route }: any) => {
         };
         await apiService.createReport(newReport);
         Alert.alert('Success', 'Report created successfully');
+        
+        // Navigate back after successful creation
+        if (Platform.OS === 'web' && onBackToReports) {
+          onBackToReports();
+        } else if (navigation) {
+          navigation.goBack();
+        }
       }
-
-      navigation.goBack();
     } catch (error) {
       console.error('Error saving report:', error);
       Alert.alert('Error', 'Failed to save report');
@@ -80,10 +131,31 @@ const CreateReportScreen = ({ navigation, route }: any) => {
               setLoading(true);
               await apiService.deleteReport(report.id);
               Alert.alert('Success', 'Report deleted successfully');
-              navigation.goBack();
+              if (Platform.OS === 'web' && onBackToReports) {
+                onBackToReports();
+              } else if (navigation) {
+                navigation.goBack();
+              }
             } catch (error) {
-              console.error('Error deleting report:', error);
-              Alert.alert('Error', 'Failed to delete report');
+              console.error('Delete error details:', error);
+              const errorMessage = error.toString();
+              if (errorMessage.includes('CORS') || errorMessage.includes('Failed to fetch') || errorMessage.includes('500')) {
+                Alert.alert(
+                  'Network Issue',
+                  'There was a connection problem while deleting. The report may or may not have been deleted. Please go back and check.',
+                  [
+                    { text: 'OK', onPress: () => {
+                      if (Platform.OS === 'web' && onBackToReports) {
+                        onBackToReports();
+                      } else if (navigation) {
+                        navigation.goBack();
+                      }
+                    }}
+                  ]
+                );
+              } else {
+                Alert.alert('Error', 'Failed to delete report: ' + errorMessage);
+              }
             } finally {
               setLoading(false);
             }
@@ -103,7 +175,13 @@ const CreateReportScreen = ({ navigation, route }: any) => {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.cancelButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              if (Platform.OS === 'web' && onBackToReports) {
+                onBackToReports();
+              } else if (navigation) {
+                navigation.goBack();
+              }
+            }}
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>

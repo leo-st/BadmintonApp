@@ -54,10 +54,9 @@ class ApiService {
     if (!(options.body instanceof FormData)) {
       headers['Content-Type'] = 'application/json';
     }
-    // Attach Authorization header for web PWA when token exists
-    const token = this.getStoredToken();
-    if (this.isWeb && token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    // For web, we use httpOnly cookies, not Bearer tokens
+    if (this.isWeb) {
+      console.log('API: Using httpOnly cookies for web authentication');
     }
     
     const config: RequestInit = {
@@ -65,8 +64,8 @@ class ApiService {
         ...headers,
         ...options.headers,
       },
-      // Use cookies only for native apps; omit for web to avoid cross-site cookie issues
-      credentials: this.isWeb ? 'omit' : 'include',
+      // Use cookies for both web and native - httpOnly cookies for authentication
+      credentials: 'include',
       ...options,
     };
 
@@ -76,6 +75,7 @@ class ApiService {
       method: config.method || 'GET',
       headers: config.headers,
       body: config.body,
+      credentials: config.credentials,
     });
 
     try {
@@ -111,16 +111,14 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-    // Store token on web for PWA flow
-    if (res && typeof res === 'object' && 'access_token' in res) {
-      this.storeToken((res as any).access_token);
-    }
+    // For web, we use httpOnly cookies set by the server, no token storage needed
+    console.log('API: Login successful, using httpOnly cookies for authentication');
     return res as any;
   }
 
   async logout(): Promise<void> {
-    // Clear token on web regardless of server response
-    this.clearToken();
+    // For web, httpOnly cookies are cleared by the server
+    console.log('API: Logging out, httpOnly cookies will be cleared by server');
     return this.request('/auth/logout', {
       method: 'POST',
     });
@@ -310,9 +308,6 @@ class ApiService {
   async createReport(report: ReportCreate): Promise<Report> {
     return this.request('/reports/', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(report),
     });
   }
@@ -320,9 +315,6 @@ class ApiService {
   async updateReport(reportId: number, report: ReportUpdate): Promise<Report> {
     return this.request(`/reports/${reportId}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(report),
     });
   }
@@ -336,9 +328,6 @@ class ApiService {
   async addReportReaction(reportId: number, reaction: ReportReactionCreate): Promise<{ id: number; user_id: number; emoji: string; created_at: string }> {
     return this.request(`/reports/${reportId}/reactions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(reaction),
     });
   }

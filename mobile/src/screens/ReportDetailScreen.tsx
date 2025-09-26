@@ -7,26 +7,29 @@ import {
   TouchableOpacity,
   Alert,
   TextInput,
-  Modal,
-  FlatList,
   SafeAreaView,
   Pressable,
+  Platform,
 } from 'react-native';
 import { Report, ReportReactionCreate } from '../types';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-const ReportDetailScreen = ({ navigation, route }: any) => {
-  const { report: initialReport } = route.params;
+interface ReportDetailScreenProps {
+  report: Report;
+  onBackToReports?: () => void;
+  onEditReport?: (report: Report) => void;
+}
+
+const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({ report: initialReport, onBackToReports, onEditReport }) => {
+  // Only use navigation on non-web platforms
+  let navigation: any = null;
+  if (Platform.OS !== 'web') {
+    // For mobile, we'd need navigation from useNavigation hook
+  }
   const [report, setReport] = useState<Report>(initialReport);
   const [loading, setLoading] = useState(false);
-  const [showReactionModal, setShowReactionModal] = useState(false);
-  const [showReactionDetailsModal, setShowReactionDetailsModal] = useState(false);
-  const [selectedEmoji, setSelectedEmoji] = useState('');
-  const [selectedEmojiReactions, setSelectedEmojiReactions] = useState<any[]>([]);
   const { user } = useAuth();
-
-  const emojis = ['👍', '❤️', '😂', '😮', '😢', '😡', '🎉', '🔥', '💪', '🏆'];
 
   useEffect(() => {
     loadReportDetails();
@@ -100,6 +103,103 @@ const ReportDetailScreen = ({ navigation, route }: any) => {
 
   const canEdit = user?.id === report.created_by_id;
 
+  const addReaction = async (emoji: string) => {
+    try {
+      await apiService.addReportReaction(report.id, { emoji });
+      // Refresh report to get updated reaction counts
+      const updatedReport = await apiService.getReport(report.id);
+      setReport(updatedReport);
+    } catch (error) {
+      console.error('Failed to add reaction:', error);
+      Alert.alert('Error', 'Failed to add reaction');
+    }
+  };
+
+  const handleDeleteReport = async () => {
+    console.log('Delete button clicked for report:', report.id);
+    
+    // Web-compatible confirmation
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure you want to delete this report? This action cannot be undone.');
+      console.log('Web confirmation result:', confirmed);
+      
+      if (!confirmed) {
+        console.log('Delete cancelled by user');
+        return;
+      }
+      
+      console.log('User confirmed delete, starting deletion process...');
+      await performDelete();
+    } else {
+      // Native mobile confirmation dialog
+      Alert.alert(
+        'Delete Report',
+        'Are you sure you want to delete this report? This action cannot be undone.',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => {
+              console.log('Delete cancelled by user');
+            },
+          },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              console.log('User confirmed delete, starting deletion process...');
+              await performDelete();
+            },
+          },
+        ]
+      );
+    }
+  };
+
+  const performDelete = async () => {
+    try {
+      console.log('Setting loading state...');
+      setLoading(true);
+      console.log('Making API call to delete report:', report.id);
+      const result = await apiService.deleteReport(report.id);
+      console.log('API call completed, result:', result);
+      console.log('Report deleted successfully');
+      
+      if (Platform.OS === 'web') {
+        alert('Report deleted successfully');
+        console.log('Navigating back to reports...');
+        if (onBackToReports) {
+          onBackToReports();
+        }
+      } else {
+        Alert.alert('Success', 'Report deleted successfully', [
+          {
+            text: 'OK',
+            onPress: () => {
+              console.log('Navigating back to reports...');
+              if (navigation) {
+                navigation.goBack();
+              }
+            },
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      
+      const errorMessage = 'Failed to delete report: ' + (error.message || 'Unknown error');
+      if (Platform.OS === 'web') {
+        alert(errorMessage);
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
+    } finally {
+      console.log('Clearing loading state...');
+      setLoading(false);
+    }
+  };
+
   const renderReaction = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.reactionItem}
@@ -124,17 +224,37 @@ const ReportDetailScreen = ({ navigation, route }: any) => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            if (Platform.OS === 'web' && onBackToReports) {
+              onBackToReports();
+            } else if (navigation) {
+              navigation.goBack();
+            }
+          }}
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         {canEdit && (
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => navigation.navigate('CreateReport', { report })}
-          >
-            <Text style={styles.editButtonText}>Edit</Text>
-          </TouchableOpacity>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => {
+                if (Platform.OS === 'web' && onEditReport) {
+                  onEditReport(report);
+                } else if (navigation) {
+                  navigation.navigate('CreateReport', { report });
+                }
+              }}
+            >
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={handleDeleteReport}
+            >
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
 
@@ -162,142 +282,60 @@ const ReportDetailScreen = ({ navigation, route }: any) => {
         </View>
 
         <View style={styles.reactionsSection}>
-          <View style={styles.reactionsHeader}>
-            <Text style={styles.reactionsTitle}>Reactions</Text>
+          {/* Simple inline reactions like in PostsScreen */}
+          <View style={styles.reactions}>
             <TouchableOpacity
-              style={styles.addReactionButton}
-              onPress={() => setShowReactionModal(true)}
+              style={styles.reactionButton}
+              onPress={() => addReaction('👍')}
             >
-              <Text style={styles.addReactionButtonText}>+</Text>
+              <Text style={styles.reactionEmoji}>👍</Text>
+              <Text style={styles.reactionCount}>
+                {report.reaction_counts?.['👍'] || 0}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.reactionButton}
+              onPress={() => addReaction('❤️')}
+            >
+              <Text style={styles.reactionEmoji}>❤️</Text>
+              <Text style={styles.reactionCount}>
+                {report.reaction_counts?.['❤️'] || 0}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.reactionButton}
+              onPress={() => addReaction('😂')}
+            >
+              <Text style={styles.reactionEmoji}>😂</Text>
+              <Text style={styles.reactionCount}>
+                {report.reaction_counts?.['😂'] || 0}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.reactionButton}
+              onPress={() => addReaction('🔥')}
+            >
+              <Text style={styles.reactionEmoji}>🔥</Text>
+              <Text style={styles.reactionCount}>
+                {report.reaction_counts?.['🔥'] || 0}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.reactionButton}
+              onPress={() => addReaction('🎉')}
+            >
+              <Text style={styles.reactionEmoji}>🎉</Text>
+              <Text style={styles.reactionCount}>
+                {report.reaction_counts?.['🎉'] || 0}
+              </Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.reactionsHint}>
-            Tap to react • Hold to see who reacted
-          </Text>
-
-          {report.reaction_counts && Object.keys(report.reaction_counts).length > 0 ? (
-            <View style={styles.reactionsGrid}>
-              {Object.entries(report.reaction_counts).map(([emoji, count]) => (
-                <Pressable
-                  key={emoji}
-                  style={({ pressed }) => [
-                    styles.reactionChip,
-                    pressed && styles.reactionChipPressed
-                  ]}
-                  onPress={() => {
-                    // Find the first reaction with this emoji to get its ID
-                    const reaction = report.reactions?.find(r => r.emoji === emoji);
-                    if (reaction && reaction.user_id === user?.id) {
-                      handleRemoveReaction(reaction.id);
-                    } else {
-                      handleReaction(emoji);
-                    }
-                  }}
-                  onLongPress={() => showReactionDetails(emoji)}
-                  delayLongPress={500}
-                >
-                  <Text style={styles.reactionChipEmoji}>{emoji}</Text>
-                  <Text style={styles.reactionChipCount}>{count}</Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.noReactionsContainer}>
-              <Text style={styles.noReactionsText}>No reactions yet</Text>
-              <TouchableOpacity
-                style={styles.addFirstReactionButton}
-                onPress={() => setShowReactionModal(true)}
-              >
-                <Text style={styles.addFirstReactionText}>Add first reaction</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
       </ScrollView>
-
-      <Modal
-        visible={showReactionModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowReactionModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Reaction</Text>
-            <View style={styles.emojisGrid}>
-              {emojis.map((emoji) => (
-                <TouchableOpacity
-                  key={emoji}
-                  style={styles.emojiButton}
-                  onPress={() => handleReaction(emoji)}
-                >
-                  <Text style={styles.emojiText}>{emoji}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TouchableOpacity
-              style={styles.cancelModalButton}
-              onPress={() => setShowReactionModal(false)}
-            >
-              <Text style={styles.cancelModalButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={showReactionDetailsModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowReactionDetailsModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.reactionDetailsHeader}>
-              <Text style={styles.reactionDetailsTitle}>
-                {selectedEmoji} Reactions
-              </Text>
-              <Text style={styles.reactionDetailsSubtitle}>
-                {selectedEmojiReactions.length} {selectedEmojiReactions.length === 1 ? 'person' : 'people'} reacted
-              </Text>
-            </View>
-            
-            <ScrollView style={styles.reactionDetailsList} showsVerticalScrollIndicator={false}>
-              {selectedEmojiReactions.map((reaction, index) => (
-                <View key={reaction.id || index} style={styles.reactionDetailItem}>
-                  <Text style={styles.reactionDetailEmoji}>{reaction.emoji}</Text>
-                  <View style={styles.reactionDetailInfo}>
-                    <Text style={styles.reactionDetailUserName}>
-                      {reaction.user?.full_name || `User ${reaction.user_id}`}
-                    </Text>
-                    <Text style={styles.reactionDetailTime}>
-                      {formatDateTime(reaction.created_at)}
-                    </Text>
-                  </View>
-                  {reaction.user_id === user?.id && (
-                    <TouchableOpacity
-                      style={styles.removeReactionButton}
-                      onPress={() => {
-                        handleRemoveReaction(reaction.id);
-                        setShowReactionDetailsModal(false);
-                      }}
-                    >
-                      <Text style={styles.removeReactionText}>Remove</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              ))}
-            </ScrollView>
-            
-            <TouchableOpacity
-              style={styles.cancelModalButton}
-              onPress={() => setShowReactionDetailsModal(false)}
-            >
-              <Text style={styles.cancelModalButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -323,6 +361,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#007AFF',
   },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   editButton: {
     backgroundColor: '#007AFF',
     paddingHorizontal: 16,
@@ -330,6 +372,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   editButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  deleteButton: {
+    backgroundColor: '#FF3B30',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  deleteButtonText: {
     color: '#fff',
     fontWeight: 'bold',
   },
@@ -394,6 +446,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  reactions: {
+    flexDirection: 'row',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  reactionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 15,
+    borderRadius: 15,
+    backgroundColor: '#f8f9fa',
+  },
+  reactionEmoji: {
+    fontSize: 16,
+    marginRight: 4,
+  },
+  reactionCount: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
   },
   reactionsHeader: {
     flexDirection: 'row',

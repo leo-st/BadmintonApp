@@ -33,14 +33,14 @@ async def authenticate(
         expires_delta=expires,
     )
 
-    # return token in body (for web/PWA) and set cookie (for native)
-    response = JSONResponse(content={"message": "login successful", "access_token": access_token, "token_type": "bearer"})
+    # Use ONLY httpOnly cookies for authentication (no token in response body)
+    response = JSONResponse(content={"message": "login successful"})
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        samesite="lax",   # Keep cookie behavior for native/local
-        secure=False,     # Overridden in prod by reverse proxy or settings if needed
+        samesite="lax",   # Allow cross-origin requests for local development
+        secure=False,     # False for local development (HTTP)
         max_age=settings.access_token_expire_minutes * 60
     )
     return response

@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="/icon.png">
     <link rel="icon" href="/favicon.png">
     
-    <!-- Styles -->
+    <!-- Minimal PWA styles -->
     <style>
         body {
             margin: 0;
@@ -24,140 +24,13 @@
             background-color: #f5f5f5;
         }
         
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-            background: white;
+        #root {
             min-height: 100vh;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        }
-        
-        .header {
-            background: #007AFF;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        
-        .content {
-            padding: 20px;
-        }
-        
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        label {
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #333;
-        }
-        
-        input {
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        
-        .btn {
-            background: #007AFF;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        
-        .btn:hover {
-            background: #0056b3;
-        }
-        
-        .btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        
-        .error {
-            color: #ff3b30;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        
-        .success {
-            color: #34c759;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #007AFF;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .features {
-            margin-top: 30px;
-        }
-        
-        .feature {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        
-        .feature-icon {
-            width: 24px;
-            height: 24px;
-            background: #007AFF;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🏸 Badminton App</h1>
-            <p>Track matches with your friends</p>
-        </div>
-        
-        <div class="content">
-            <div id="root"></div>
-        </div>
-    </div>
+    <div id="root"></div>
     
     <script>
         console.log('Badminton App PWA loading...');

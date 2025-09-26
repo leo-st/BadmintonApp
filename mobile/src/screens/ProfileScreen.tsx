@@ -11,6 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { useRoute, RouteProp } from '@react-navigation/native';
+import { Platform } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { User } from '../types';
@@ -22,8 +23,12 @@ type ProfileScreenRouteProp = RouteProp<{
 
 export const ProfileScreen: React.FC = () => {
   const { user: currentUser, login, refreshUser } = useAuth();
-  const route = useRoute<ProfileScreenRouteProp>();
-  const { userId } = route.params || {};
+  // Only use route on non-web platforms
+  let route: any = null;
+  if (Platform.OS !== 'web') {
+    route = useRoute<ProfileScreenRouteProp>();
+  }
+  const { userId } = route?.params || {};
   
   // Use the specified user or current user
   const [profileUser, setProfileUser] = useState<User | null>(currentUser);

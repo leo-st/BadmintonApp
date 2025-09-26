@@ -4,22 +4,29 @@ import {
   Text,
   StyleSheet,
   ViewStyle,
+  Platform,
 } from 'react-native';
 
 interface FloatingActionButtonProps {
   onPress: () => void;
   icon?: string;
   style?: ViewStyle;
+  fixed?: boolean; // New prop for viewport-fixed positioning
 }
 
 export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   onPress,
   icon = '+',
   style,
+  fixed = false,
 }) => {
+  const fabStyle = fixed && Platform.OS === 'web' 
+    ? [styles.fab, styles.fabFixed, style]
+    : [styles.fab, style];
+
   return (
     <TouchableOpacity
-      style={[styles.fab, style]}
+      style={fabStyle}
       onPress={onPress}
       activeOpacity={0.8}
     >
@@ -48,6 +55,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65,
     elevation: 8,
     zIndex: 1000,
+  },
+  fabFixed: {
+    // Fixed positioning for web to stay in viewport
+    position: 'fixed' as any,
+    zIndex: 9999,
   },
   fabIcon: {
     fontSize: 24,

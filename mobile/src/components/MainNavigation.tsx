@@ -10,7 +10,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 
@@ -36,20 +36,26 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   const [pendingVerifications, setPendingVerifications] = useState(0);
   const [pendingInvitations, setPendingInvitations] = useState(0);
   const [unseenReports, setUnseenReports] = useState(0);
-  const navigation = useNavigation() as any;
+  // Only use navigation on non-web platforms
+  let navigation: any = null;
+  if (Platform.OS !== 'web') {
+    navigation = useNavigation() as any;
+  }
   const { user, hasPermission, isAdmin, logout } = useAuth();
 
   useEffect(() => {
     loadNotifications();
   }, []);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      loadNotifications();
-    }, [])
-  );
+  // Removed useFocusEffect to avoid NavigationContainer dependency on web
 
   const loadNotifications = async () => {
+    // Skip API calls on web to avoid re-rendering issues for now
+    if (Platform.OS === 'web') {
+      console.log('MainNavigation: Skipping notifications load on web');
+      return;
+    }
+
     // Load pending verifications
     if (hasPermission('matches_can_verify')) {
       try {
@@ -113,10 +119,10 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         onTabChange('matches');
       } else if (screenName === 'TournamentLeaderboard') {
         onTabChange('tournaments');
-      } else {
+      } else if (navigation) {
         navigation.navigate(screenName as never);
       }
-    } else {
+    } else if (navigation) {
       // For non-tab screens, navigate to Main screen for tab-based screens with tab parameter
       if (screenName === 'Home' || screenName === 'Posts') {
         navigation.navigate('Main' as never, { tab: 'feed' });

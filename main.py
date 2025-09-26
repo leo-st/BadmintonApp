@@ -41,12 +41,17 @@ app = FastAPI(
     redoc_url="/redoc" if not settings.is_production else None
 )
 
-# CORS middleware
+# CORS middleware - Fixed for httpOnly cookie authentication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list if settings.is_production else ["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=settings.cors_origins_list if settings.is_production else [
+        "http://localhost:8081",  # Frontend dev server
+        "http://localhost:3000",  # Alternative frontend port
+        "http://127.0.0.1:8081",
+        "http://127.0.0.1:3000"
+    ],
+    allow_credentials=True,  # Required for httpOnly cookies
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
 )
 

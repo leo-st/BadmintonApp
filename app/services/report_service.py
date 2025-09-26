@@ -86,6 +86,9 @@ def update_report(db: Session, report_id: int, report_data: ReportUpdate, user_i
     report.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(report)
+    
+    # Load the created_by relationship before returning
+    report = db.query(Report).options(joinedload(Report.created_by)).filter(Report.id == report.id).first()
     return report
 
 
