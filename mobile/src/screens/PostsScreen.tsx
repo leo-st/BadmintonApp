@@ -59,6 +59,14 @@ export const PostsScreen = ({ navigation }: any) => {
         posts: Array.isArray(response?.posts) ? response.posts.length : 'n/a',
         users: response?.users ? Object.keys(response.users).length : 'n/a',
       });
+      console.log('Feed: full response object:', response);
+      
+      // Check if response has the expected structure
+      if (!response || !Array.isArray(response.posts)) {
+        console.error('Feed: Invalid response structure:', response);
+        setError('Invalid response from server');
+        return;
+      }
       
       // Reconstruct full post objects by joining posts with users
       const reconstructedPosts: Post[] = response.posts.map(post => {
