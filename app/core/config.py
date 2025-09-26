@@ -5,7 +5,7 @@ import os
 
 
 class Settings(BaseSettings):
-    # Database
+    # Database - Railway provides DATABASE_URL automatically
     database_url: str = "postgresql://localhost:5432/badminton_app"
     database_user: str = "badminton_user"
     database_password: str = ""
@@ -15,8 +15,12 @@ class Settings(BaseSettings):
     
     @property
     def full_database_url(self) -> str:
-        """Construct the full database URL from components"""
-        if self.database_password:
+        """Construct the full database URL from components or use provided DATABASE_URL"""
+        # If DATABASE_URL is provided (e.g., by Railway), use it directly
+        if self.database_url and self.database_url != "postgresql://localhost:5432/badminton_app":
+            return self.database_url
+        # Otherwise, construct from components
+        elif self.database_password:
             return f"postgresql://{self.database_user}:{self.database_password}@{self.database_host}:{self.database_port}/{self.database_name}"
         else:
             return self.database_url
