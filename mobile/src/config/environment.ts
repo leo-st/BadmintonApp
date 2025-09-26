@@ -9,7 +9,7 @@ export interface EnvironmentConfig {
 
 // Default configuration (can be overridden by environment variables)
 const defaultConfig: EnvironmentConfig = {
-  API_BASE_URL: 'https://web-production-d1979.up.railway.app',
+  API_BASE_URL: 'https://badmintonapp-production.up.railway.app',
   API_TIMEOUT: 10000,
   NODE_ENV: 'development',
 };
@@ -21,7 +21,7 @@ const environments: Record<string, Partial<EnvironmentConfig>> = {
     NODE_ENV: 'development',
   },
   production: {
-    API_BASE_URL: 'https://web-production-d1979.up.railway.app',
+    API_BASE_URL: 'https://badmintonapp-production.up.railway.app',
     NODE_ENV: 'production',
   },
   localhost: {
