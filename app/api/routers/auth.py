@@ -41,6 +41,7 @@ async def authenticate(
         httponly=True,
         samesite="none",   # Required for cross-origin HTTPS requests
         secure=True,       # Required for HTTPS and SameSite=None
+        path="/",          # Ensure cookie is available for all paths
         max_age=settings.access_token_expire_minutes * 60
     )
     return response
