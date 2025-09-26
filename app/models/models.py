@@ -30,7 +30,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    role_id = Column(Integer, ForeignKey("access_control.Role.role_id"), nullable=True)
+    role_id = Column(Integer, ForeignKey("Role.role_id"), nullable=True)
     profile_picture_url = Column(String(500), nullable=True)
     profile_picture_updated_at = Column(DateTime(timezone=True), nullable=True)
 

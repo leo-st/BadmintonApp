@@ -13,7 +13,7 @@ from app.core.database import Base
 
 class Role(Base):
     __tablename__ = "Role"
-    __table_args__ = {"schema": "access_control"}
+    __table_args__ = 
 
     role_id = Column(Integer, primary_key=True, index=True)
     role_name = Column(Text, nullable=False, default="Neuer Benutzertyp")
@@ -22,12 +22,12 @@ class Role(Base):
     # Relationships
     users = relationship("AccessControlUser", back_populates="role")
     role_permissions = relationship("RolesPermissions", back_populates="role", lazy="joined")
-    permissions = relationship("Permission", secondary="access_control.RolesPermissions", lazy="joined", overlaps="role_permissions")
+    permissions = relationship("Permission", secondary="RolesPermissions", lazy="joined", overlaps="role_permissions")
 
 
 class PermissionGroup(Base):
     __tablename__ = "PermissionGroup"
-    __table_args__ = {"schema": "access_control"}
+    __table_args__ = 
 
     permission_group_id = Column(Integer, primary_key=True, index=True)
     permission_group_name = Column(Text, nullable=False, unique=True, default="permission_group_x")
@@ -38,11 +38,11 @@ class PermissionGroup(Base):
 
 class Permission(Base):
     __tablename__ = "Permission"
-    __table_args__ = {"schema": "access_control"}
+    __table_args__ = 
 
     permission_id = Column(Integer, primary_key=True, index=True)
     permission_key = Column(Text, nullable=False, unique=True, default="can_do_x")
-    permission_group_id = Column(Integer, ForeignKey("access_control.PermissionGroup.permission_group_id"), nullable=True)
+    permission_group_id = Column(Integer, ForeignKey("PermissionGroup.permission_group_id"), nullable=True)
 
     # Relationships
     permission_group = relationship("PermissionGroup", back_populates="permissions")
@@ -51,7 +51,7 @@ class Permission(Base):
 
 class AccessControlUser(Base):
     __tablename__ = "User"
-    __table_args__ = {"schema": "access_control"}
+    __table_args__ = 
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(255), unique=True, nullable=False)
@@ -63,7 +63,7 @@ class AccessControlUser(Base):
     language = Column(String(255), nullable=False, default="DE")
     pw_hash = Column(String(255), nullable=False)
     pw_reset_required = Column(Boolean, nullable=False, default=True)
-    role_id = Column(Integer, ForeignKey("access_control.Role.role_id"), nullable=True)
+    role_id = Column(Integer, ForeignKey("Role.role_id"), nullable=True)
 
     # Relationships
     role = relationship("Role", back_populates="users")
@@ -71,10 +71,10 @@ class AccessControlUser(Base):
 
 class RolesPermissions(Base):
     __tablename__ = "RolesPermissions"
-    __table_args__ = {"schema": "access_control"}
+    __table_args__ = 
 
-    role_id = Column(Integer, ForeignKey("access_control.Role.role_id"), primary_key=True)
-    permission_id = Column(Integer, ForeignKey("access_control.Permission.permission_id"), primary_key=True)
+    role_id = Column(Integer, ForeignKey("Role.role_id"), primary_key=True)
+    permission_id = Column(Integer, ForeignKey("Permission.permission_id"), primary_key=True)
 
     # Relationships
     role = relationship("Role", back_populates="role_permissions", overlaps="permissions")
