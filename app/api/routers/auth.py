@@ -39,8 +39,8 @@ async def authenticate(
         key="access_token",
         value=access_token,
         httponly=True,
-        samesite="none",   # Required for cross-origin HTTPS requests
-        secure=True,       # Required for HTTPS and SameSite=None
+        samesite="lax" if not settings.is_production else "none",
+        secure=settings.is_production,  # Use secure only in production
         path="/",          # Ensure cookie is available for all paths
         max_age=settings.access_token_expire_minutes * 60
     )
@@ -57,8 +57,8 @@ async def logout(
     response.delete_cookie(
         key="access_token",
         path="/",
-        samesite="none",
-        secure=True
+        samesite="lax" if not settings.is_production else "none",
+        secure=settings.is_production
     )
     return response
 
