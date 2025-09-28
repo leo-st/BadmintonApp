@@ -305,7 +305,7 @@ export default function NotificationCenter({ currentUser }: NotificationCenterPr
                 <div className="p-8 text-center">
                   <div className="text-gray-400 mb-2">🔔</div>
                   <p className="text-sm text-gray-600">No notifications</p>
-                  <p className="text-xs text-gray-500">You're all caught up!</p>
+                  <p className="text-xs text-gray-500">You&apos;re all caught up!</p>
                 </div>
               ) : (
                 notifications.map(renderNotification)

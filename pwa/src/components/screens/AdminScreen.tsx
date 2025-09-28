@@ -221,7 +221,7 @@ export default function AdminScreen({ onBack }: AdminScreenProps) {
                       {user.email}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {(user as any).role_name || 'No Role'}
+                      {user.role_id ? `Role ${user.role_id}` : 'No Role'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

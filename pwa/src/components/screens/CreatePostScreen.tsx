@@ -75,7 +75,7 @@ export default function CreatePostScreen({ onBack, onPostCreated }: CreatePostSc
           {/* Content Input */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              What's on your mind?
+              What&apos;s on your mind?
             </label>
             <textarea
               value={content}

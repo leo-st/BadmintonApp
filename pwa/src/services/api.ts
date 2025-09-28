@@ -178,7 +178,7 @@ class ApiService {
     search_text?: string;
     event_date_from?: string;
     event_date_to?: string;
-  }): Promise<{ reports: Report[]; pagination: any }> {
+  }): Promise<{ reports: Report[]; pagination: { skip: number; limit: number; total: number } }> {
     const queryParams = new URLSearchParams();
     if (params?.skip) queryParams.append('skip', params.skip.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
@@ -189,7 +189,7 @@ class ApiService {
     const queryString = queryParams.toString();
     const endpoint = `/reports/${queryString ? `?${queryString}` : ''}`;
     
-    return this.request<{ reports: Report[]; pagination: any }>(endpoint);
+    return this.request<{ reports: Report[]; pagination: { skip: number; limit: number; total: number } }>(endpoint);
   }
 
   async getReport(reportId: number): Promise<Report> {
@@ -304,7 +304,7 @@ class ApiService {
   }
 
   async getTournamentParticipants(tournamentId: number): Promise<User[]> {
-    const participants = await this.request<any[]>(`/tournament-invitations/tournament/${tournamentId}/participants`);
+    const participants = await this.request<Array<{ user_id: number; user: { username?: string; full_name?: string; email?: string; is_active?: boolean; role_id?: number; created_at?: string; permissions?: string[] } }>>(`/tournament-invitations/tournament/${tournamentId}/participants`);
     // Extract user information from participant objects
     return participants.map(participant => ({
       id: participant.user_id,

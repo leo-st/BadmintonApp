@@ -52,7 +52,7 @@ export default function ReportsScreen({ onReportClick, onCreateReport, onUnseenC
       setError('');
 
       const currentSkip = reset ? 0 : pagination.skip;
-      const params: any = {
+      const params: Record<string, any> = {
         skip: currentSkip,
         limit: pagination.limit,
       };

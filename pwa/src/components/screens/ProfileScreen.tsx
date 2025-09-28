@@ -428,7 +428,7 @@ export default function ProfileScreen({ userId, onBack }: ProfileScreenProps) {
                       ].map(({ key, label, icon }) => (
                         <button
                           key={key}
-                          onClick={() => setStatisticsFilters(prev => ({ ...prev, match_type: key as any }))}
+                          onClick={() => setStatisticsFilters(prev => ({ ...prev, match_type: key as 'all' | 'casual' | 'tournament' }))}
                           className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                             statisticsFilters.match_type === key
                               ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'

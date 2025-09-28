@@ -24,7 +24,7 @@ export default function HomeScreen() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [selectedReport, setSelectedReport] = useState<{ id: number; title: string } | null>(null);
   const [unseenReportsCount, setUnseenReportsCount] = useState(0); // New state for unseen reports count
   const { user, logout } = useAuth();
 
@@ -40,7 +40,7 @@ export default function HomeScreen() {
     setActiveTab('profile');
   };
 
-  const handleReportClick = (report: any) => {
+  const handleReportClick = (report: { id: number; title: string }) => {
     setSelectedReport(report);
     setActiveTab('report-detail');
   };
