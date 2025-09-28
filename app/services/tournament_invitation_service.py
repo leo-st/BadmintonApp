@@ -182,7 +182,9 @@ def get_tournament_participants(
     tournament_id: int
 ) -> List[TournamentParticipant]:
     """Get all participants for a tournament"""
-    return db.query(TournamentParticipant).filter(
+    return db.query(TournamentParticipant).options(
+        joinedload(TournamentParticipant.user)
+    ).filter(
         TournamentParticipant.tournament_id == tournament_id,
         TournamentParticipant.is_active == True
     ).all()

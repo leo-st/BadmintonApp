@@ -23,6 +23,10 @@ class UserUpdate(BaseModel):
     role_id: Optional[int] = None
     profile_picture_url: Optional[str] = None
 
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
 class UserMedalCounts(BaseModel):
     gold: int = 0
     silver: int = 0

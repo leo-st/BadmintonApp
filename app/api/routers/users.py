@@ -11,7 +11,7 @@ from app.core.auth import get_current_active_user
 from app.core.database import get_db
 from app.core.authorize import authorize
 from app.models.models import User
-from app.schemas.schemas import UserCreate, UserUpdate, UserResponse
+from app.schemas.schemas import UserCreate, UserUpdate, UserResponse, PasswordChange
 from app.services.user_service import (
     get_all_users, create_user, get_user_with_id, 
     update_user_with_id, get_user_me, delete_user_with_id
@@ -172,6 +172,42 @@ def update_my_profile(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to update profile at this time."
+        )
+
+
+@router.post(
+    "/me/change-password",
+    name="Change password",
+    description="Change current user's password.",
+    response_model=dict,
+)
+def change_password(
+    passwordChange: PasswordChange,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+):
+    try:
+        # Verify current password
+        from app.core.auth import verify_password
+        if not verify_password(passwordChange.current_password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is incorrect"
+            )
+        
+        # Update password
+        from app.core.auth import get_password_hash
+        user.hashed_password = get_password_hash(passwordChange.new_password)
+        db.commit()
+        
+        return {"message": "Password changed successfully"}
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception(f"Unexpected error in change password")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to change password at this time."
         )
 
 

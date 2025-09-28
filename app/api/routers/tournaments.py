@@ -34,12 +34,37 @@ def read_tournaments(
     active_only: bool = True,
     db: Session = Depends(get_db)
 ):
-    query = db.query(Tournament)
+    from app.models.tournament_invitations import TournamentParticipant, TournamentInvitation
+    
+    # Query tournaments with participant and invitation counts
+    # Use subqueries to avoid cross join issues
+    query = db.query(
+        Tournament,
+        func.coalesce(func.count(func.distinct(TournamentParticipant.id)), 0).label('participant_count'),
+        func.coalesce(func.count(func.distinct(TournamentInvitation.id)), 0).label('invitation_count')
+    ).outerjoin(
+        TournamentParticipant, 
+        (Tournament.id == TournamentParticipant.tournament_id) & 
+        (TournamentParticipant.is_active.is_(True))
+    ).outerjoin(
+        TournamentInvitation,
+        Tournament.id == TournamentInvitation.tournament_id
+    ).group_by(Tournament.id)
+    
     if active_only:
-        query = query.filter(Tournament.is_active.is_(True))
+        query = query.filter(Tournament.status == TournamentStatus.ACTIVE.value)
 
-    tournaments = query.offset(skip).limit(limit).all()
-    return tournaments
+    tournaments_data = query.offset(skip).limit(limit).all()
+    
+    # Convert to response format
+    result = []
+    for tournament, participant_count, invitation_count in tournaments_data:
+        tournament_dict = tournament.__dict__.copy()
+        tournament_dict['participant_count'] = participant_count
+        tournament_dict['invitation_count'] = invitation_count
+        result.append(TournamentResponse(**tournament_dict))
+    
+    return result
 
 @router.get("/public", response_model=list[TournamentResponse])
 def read_public_tournaments(
@@ -48,8 +73,32 @@ def read_public_tournaments(
     db: Session = Depends(get_db)
 ):
     """Public endpoint to view all tournaments (active and completed)"""
-    tournaments = db.query(Tournament).offset(skip).limit(limit).all()
-    return tournaments
+    from app.models.tournament_invitations import TournamentParticipant, TournamentInvitation
+    
+    # Query tournaments with participant and invitation counts
+    # Use subqueries to avoid cross join issues
+    tournaments = db.query(
+        Tournament,
+        func.coalesce(func.count(func.distinct(TournamentParticipant.id)), 0).label('participant_count'),
+        func.coalesce(func.count(func.distinct(TournamentInvitation.id)), 0).label('invitation_count')
+    ).outerjoin(
+        TournamentParticipant, 
+        (Tournament.id == TournamentParticipant.tournament_id) & 
+        (TournamentParticipant.is_active.is_(True))
+    ).outerjoin(
+        TournamentInvitation,
+        Tournament.id == TournamentInvitation.tournament_id
+    ).group_by(Tournament.id).offset(skip).limit(limit).all()
+    
+    # Convert to response format
+    result = []
+    for tournament, participant_count, invitation_count in tournaments:
+        tournament_dict = tournament.__dict__.copy()
+        tournament_dict['participant_count'] = participant_count
+        tournament_dict['invitation_count'] = invitation_count
+        result.append(TournamentResponse(**tournament_dict))
+    
+    return result
 
 @router.get("/{tournament_id}", response_model=TournamentResponse)
 def read_tournament(tournament_id: int, db: Session = Depends(get_db)):
@@ -104,8 +153,27 @@ def deactivate_tournament(
         raise HTTPException(status_code=404, detail="Tournament not found")
     
     tournament.is_active = False
+    tournament.status = TournamentStatus.COMPLETED.value
     db.commit()
     return {"message": "Tournament deactivated successfully"}
+
+@router.post("/{tournament_id}/activate")
+def activate_tournament(
+    tournament_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Activate a tournament (admin only)"""
+    authorize(current_user, db, ["tournaments_can_edit_all"])
+    
+    tournament = db.query(Tournament).filter(Tournament.id == tournament_id).first()
+    if not tournament:
+        raise HTTPException(status_code=404, detail="Tournament not found")
+    
+    tournament.status = TournamentStatus.ACTIVE.value
+    db.commit()
+    
+    return {"message": "Tournament activated successfully"}
 
 @router.get("/{tournament_id}/stats")
 def get_tournament_stats(
