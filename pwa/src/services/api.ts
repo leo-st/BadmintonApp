@@ -231,7 +231,7 @@ class ApiService {
     if (params?.event_date_to) queryParams.append('event_date_to', params.event_date_to);
     
     const queryString = queryParams.toString();
-    const endpoint = `/reports/${queryString ? `?${queryString}` : ''}`;
+    const endpoint = queryString ? `/reports?${queryString}` : '/reports';
     
     return this.request<{ reports: Report[]; pagination: { skip: number; limit: number; total: number } }>(endpoint);
   }
