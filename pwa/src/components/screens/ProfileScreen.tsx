@@ -11,7 +11,7 @@ interface ProfileScreenProps {
 }
 
 export default function ProfileScreen({ userId, onBack }: ProfileScreenProps) {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, refreshUser } = useAuth();
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -37,6 +37,7 @@ export default function ProfileScreen({ userId, onBack }: ProfileScreenProps) {
   });
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isUploadingPicture, setIsUploadingPicture] = useState(false);
 
   const isOwnProfile = !userId || userId === currentUser?.id;
   const targetUserId = userId || currentUser?.id;
@@ -170,6 +171,95 @@ export default function ProfileScreen({ userId, onBack }: ProfileScreenProps) {
     }
   };
 
+  const handleProfilePictureClick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = handleProfilePictureUpload;
+    input.click();
+  };
+
+  const handleProfilePictureUpload = async (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+    
+    if (!file) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    try {
+      setIsUploadingPicture(true);
+      const response = await apiService.uploadProfilePicture(file);
+      
+      // Update the profile user with the new picture URL
+      if (profileUser) {
+        setProfileUser({
+          ...profileUser,
+          profile_picture_url: response.profile_picture_url
+        });
+      }
+      
+      // Refresh the auth context to update the user data globally
+      await refreshUser();
+      
+      // If this is the current user's profile, also refresh the profile user data
+      if (isOwnProfile) {
+        await loadUser(targetUserId!);
+      }
+      
+      alert('Profile picture updated successfully!');
+    } catch (error) {
+      console.error('Failed to upload profile picture:', error);
+      alert('Failed to upload profile picture. Please try again.');
+    } finally {
+      setIsUploadingPicture(false);
+    }
+  };
+
+  const handleDeleteProfilePicture = async () => {
+    if (!confirm('Are you sure you want to delete your profile picture?')) {
+      return;
+    }
+
+    try {
+      setIsUploadingPicture(true);
+      await apiService.deleteProfilePicture();
+      
+      // Update the profile user to remove the picture URL
+      if (profileUser) {
+        setProfileUser({
+          ...profileUser,
+          profile_picture_url: undefined
+        });
+      }
+      
+      // Refresh the auth context to update the user data globally
+      await refreshUser();
+      
+      // If this is the current user's profile, also refresh the profile user data
+      if (isOwnProfile) {
+        await loadUser(targetUserId!);
+      }
+      
+      alert('Profile picture deleted successfully!');
+    } catch (error) {
+      console.error('Failed to delete profile picture:', error);
+      alert('Failed to delete profile picture. Please try again.');
+    } finally {
+      setIsUploadingPicture(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-4">
@@ -217,10 +307,40 @@ export default function ProfileScreen({ userId, onBack }: ProfileScreenProps) {
         <div className="p-6 space-y-6">
           {/* Profile Picture and Basic Info */}
           <div className="text-center">
-            <div className="mx-auto h-24 w-24 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
-              <span className="text-3xl font-bold text-indigo-600">
-                {profileUser.full_name?.charAt(0) || profileUser.username?.charAt(0) || '?'}
-              </span>
+            <div className="mx-auto h-24 w-24 bg-indigo-100 rounded-full flex items-center justify-center mb-4 relative">
+              {profileUser.profile_picture_url ? (
+                <img
+                  src={profileUser.profile_picture_url}
+                  alt="Profile"
+                  className="h-24 w-24 rounded-full object-cover"
+                />
+              ) : (
+                <span className="text-3xl font-bold text-indigo-600">
+                  {profileUser.full_name?.charAt(0) || profileUser.username?.charAt(0) || '?'}
+                </span>
+              )}
+              {isOwnProfile && (
+                <div className="absolute bottom-0 right-0 flex space-x-1">
+                  <button
+                    onClick={handleProfilePictureClick}
+                    disabled={isUploadingPicture}
+                    className="h-8 w-8 bg-indigo-600 text-white rounded-full flex items-center justify-center hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                    title="Change profile picture"
+                  >
+                    {isUploadingPicture ? '⏳' : '📷'}
+                  </button>
+                  {profileUser.profile_picture_url && (
+                    <button
+                      onClick={handleDeleteProfilePicture}
+                      disabled={isUploadingPicture}
+                      className="h-8 w-8 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 transition-colors disabled:opacity-50"
+                      title="Delete profile picture"
+                    >
+                      🗑️
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-1">
               {profileUser.full_name || profileUser.username}
@@ -422,7 +542,7 @@ export default function ProfileScreen({ userId, onBack }: ProfileScreenProps) {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Match Type:</label>
                     <div className="flex space-x-2">
                       {[
-                        { key: 'all', label: 'All', icon: '🎾' },
+                        { key: 'all', label: 'All', icon: '🏸' },
                         { key: 'casual', label: 'Casual', icon: '🏸' },
                         { key: 'tournament', label: 'Tournament', icon: '🏆' }
                       ].map(({ key, label, icon }) => (
@@ -493,7 +613,7 @@ export default function ProfileScreen({ userId, onBack }: ProfileScreenProps) {
                 ) : statistics ? (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-blue-50 p-4 rounded-lg text-center">
-                      <div className="text-2xl mb-1">🎾</div>
+                      <div className="text-2xl mb-1">🏸</div>
                       <div className="font-semibold text-gray-900">Total Matches</div>
                       <div className="text-2xl font-bold text-blue-600">{statistics.total_matches}</div>
                     </div>

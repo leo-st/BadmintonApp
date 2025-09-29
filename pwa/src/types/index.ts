@@ -7,6 +7,7 @@ export interface User {
   role_id?: number;
   created_at?: string;
   permissions?: string[];
+  profile_picture_url?: string;
 }
 
 export interface Match {

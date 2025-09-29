@@ -64,7 +64,7 @@ export default function HomeScreen() {
   const renderActiveScreen = () => {
     switch (activeTab) {
       case 'feed':
-        return <FeedScreen onCreatePost={() => setActiveTab('create-post')} onUserClick={handleUserClick} />;
+        return <FeedScreen onCreatePost={() => setActiveTab('create-post')} onUserClick={handleUserClick} currentUserId={user?.id} />;
       case 'matches':
         return <MatchesScreen onRecordMatch={() => setActiveTab('record-match')} onUserClick={handleUserClick} />;
       case 'tournaments':
@@ -126,7 +126,7 @@ export default function HomeScreen() {
           />
         );
       default:
-        return <FeedScreen onCreatePost={() => setActiveTab('create-post')} />;
+        return <FeedScreen onCreatePost={() => setActiveTab('create-post')} currentUserId={user?.id} />;
     }
   };
 
@@ -198,7 +198,7 @@ export default function HomeScreen() {
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
-                🏓 Matches
+                🏸 Matches
               </button>
               <button
                 onClick={() => {
@@ -331,7 +331,7 @@ export default function HomeScreen() {
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
-                🏓 Matches
+                🏸 Matches
               </button>
               <button
                 onClick={() => setActiveTab('tournaments')}

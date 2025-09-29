@@ -1,6 +1,6 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -95,6 +95,8 @@ def read_matches(
     limit: int = 500,
     match_type: Optional[str] = Query(None, description="Filter by match type: casual or tournament"),
     status: Optional[str] = Query(None, description="Filter by status: pending_verification, verified, or rejected"),
+    player_ids: Optional[str] = Query(None, description="Filter by player IDs (comma-separated, matches where any of these players participated)"),
+    tournament_id: Optional[int] = Query(None, description="Filter by tournament ID"),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
@@ -118,6 +120,24 @@ def read_matches(
             query = query.filter(Match.status == status_enum)
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Invalid status: {status}. Valid values: pending_verification, verified, rejected")
+
+    # Filter by players (matches where any of these players participated)
+    if player_ids:
+        try:
+            player_id_list = [int(id.strip()) for id in player_ids.split(',') if id.strip()]
+            if player_id_list:
+                query = query.filter(
+                    or_(
+                        Match.player1_id.in_(player_id_list),
+                        Match.player2_id.in_(player_id_list)
+                    )
+                )
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid player_ids format. Use comma-separated integers.")
+
+    # Filter by tournament
+    if tournament_id:
+        query = query.filter(Match.tournament_id == tournament_id)
 
     matches = query.order_by(Match.match_date.desc()).offset(skip).limit(limit).all()
     return matches

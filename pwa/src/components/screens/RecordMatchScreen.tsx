@@ -202,7 +202,7 @@ export default function RecordMatchScreen({ onBack }: RecordMatchScreenProps) {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                🏓 Casual
+                🏸 Casual
               </button>
               <button
                 onClick={() => {

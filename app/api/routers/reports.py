@@ -108,11 +108,11 @@ def create_new_report(
             )
             db.add(view)
             db.commit()
-            print(f"Successfully marked report {report.id} as seen for user {current_user.id}")
+            logger.info(f"Successfully marked report {report.id} as seen for user {current_user.id}")
         else:
-            print(f"Report {report.id} already marked as seen for user {current_user.id}")
+            logger.info(f"Report {report.id} already marked as seen for user {current_user.id}")
     except Exception as e:
-        print(f"Error marking report as seen: {e}")
+        logger.exception(f"Error marking report as seen: {e}")
         db.rollback()
         pass
     

@@ -349,7 +349,5 @@ def get_tournament_leaderboard(
             "leaderboard": leaderboard
         }
     except Exception as e:
-        print(f"Error in leaderboard: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.exception(f"Error in leaderboard: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

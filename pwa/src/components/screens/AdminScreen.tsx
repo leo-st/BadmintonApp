@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, UserCreate } from '@/types';
 import { apiService } from '@/services/api';
+import UserAvatar from '@/components/UserAvatar';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface AdminScreenProps {
@@ -204,11 +205,7 @@ export default function AdminScreen({ onBack }: AdminScreenProps) {
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-indigo-600">
-                            {user.full_name?.charAt(0) || user.username.charAt(0)}
-                          </span>
-                        </div>
+                        <UserAvatar user={user} size="md" />
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
                             {user.full_name || user.username}

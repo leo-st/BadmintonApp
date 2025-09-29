@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { Post, User, Comment, ReactionCreate } from '@/types';
 import { apiService } from '@/services/api';
+import UserAvatar from '@/components/UserAvatar';
 
-export default function FeedScreen({ onCreatePost, onUserClick }: { onCreatePost?: () => void; onUserClick?: (userId: number) => void }) {
+export default function FeedScreen({ onCreatePost, onUserClick, currentUserId }: { onCreatePost?: () => void; onUserClick?: (userId: number) => void; currentUserId?: number }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [users, setUsers] = useState<Record<string, User>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -14,9 +15,23 @@ export default function FeedScreen({ onCreatePost, onUserClick }: { onCreatePost
   const [newComment, setNewComment] = useState<{ [postId: number]: string }>({});
   const [loadingComments, setLoadingComments] = useState<{ [postId: number]: boolean }>({});
   const [addingReaction, setAddingReaction] = useState<{ [postId: number]: boolean }>({});
+  const [showReactionPicker, setShowReactionPicker] = useState<{ [postId: number]: boolean }>({});
 
   useEffect(() => {
     fetchPosts();
+  }, []);
+
+  // Close reaction picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.reaction-picker')) {
+        setShowReactionPicker({});
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const fetchPosts = async () => {
@@ -37,12 +52,46 @@ export default function FeedScreen({ onCreatePost, onUserClick }: { onCreatePost
       setAddingReaction(prev => ({ ...prev, [postId]: true }));
       await apiService.addReactionToPost(postId, { emoji });
       await fetchPosts(); // Refresh posts to get updated reaction counts
+      setShowReactionPicker(prev => ({ ...prev, [postId]: false })); // Close picker
     } catch (error) {
       console.error('Failed to add reaction:', error);
       alert('Failed to add reaction');
     } finally {
       setAddingReaction(prev => ({ ...prev, [postId]: false }));
     }
+  };
+
+  const removeReaction = async (postId: number, emoji: string) => {
+    try {
+      setAddingReaction(prev => ({ ...prev, [postId]: true }));
+      await apiService.removeReactionFromPost(postId, emoji);
+      await fetchPosts(); // Refresh posts to get updated reaction counts
+    } catch (error) {
+      console.error('Failed to remove reaction:', error);
+      alert('Failed to remove reaction');
+    } finally {
+      setAddingReaction(prev => ({ ...prev, [postId]: false }));
+    }
+  };
+
+  const toggleReaction = async (postId: number, emoji: string, currentUserId: number) => {
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+
+    // Check if current user already reacted with this emoji
+    const userReaction = post.reactions.find(r => r.user_id === currentUserId && r.emoji === emoji);
+    
+    if (userReaction) {
+      // User already reacted, remove it
+      await removeReaction(postId, emoji);
+    } else {
+      // User hasn't reacted, add it
+      await addReaction(postId, emoji);
+    }
+  };
+
+  const toggleReactionPicker = (postId: number) => {
+    setShowReactionPicker(prev => ({ ...prev, [postId]: !prev[postId] }));
   };
 
   const loadComments = async (postId: number) => {
@@ -95,7 +144,6 @@ export default function FeedScreen({ onCreatePost, onUserClick }: { onCreatePost
     return (
       <div className="p-4">
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Feed</h2>
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
             <span className="ml-2 text-gray-600">Loading posts...</span>
@@ -108,10 +156,6 @@ export default function FeedScreen({ onCreatePost, onUserClick }: { onCreatePost
   return (
     <div className="p-4 relative">
       <div className="bg-white rounded-lg shadow">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">Feed</h2>
-          <p className="text-gray-600 mt-1">Latest posts and updates from the community</p>
-        </div>
 
         {error && (
           <div className="p-4 bg-red-50 border-l-4 border-red-400">
@@ -140,11 +184,7 @@ export default function FeedScreen({ onCreatePost, onUserClick }: { onCreatePost
                 <div key={post.id} className="p-6 hover:bg-gray-50 border-b border-gray-100">
                   <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0">
-                      <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                        <span className="text-indigo-600 font-medium text-sm">
-                          {initials}
-                        </span>
-                      </div>
+                      <UserAvatar user={users[post.user_id] || { id: post.user_id, username: post.author_name || 'Unknown' } as User} size="md" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2 mb-2">
@@ -175,42 +215,87 @@ export default function FeedScreen({ onCreatePost, onUserClick }: { onCreatePost
                       {/* Reaction Counts */}
                       {post.reaction_counts && Object.keys(post.reaction_counts).length > 0 && (
                         <div className="mt-3 flex items-center space-x-1">
-                          {Object.entries(post.reaction_counts).map(([emoji, count]) => (
-                            <span key={`${post.id}-reaction-${emoji}`} className="text-sm">
-                              {emoji} {count}
-                            </span>
-                          ))}
+                          {Object.entries(post.reaction_counts).map(([emoji, count]) => {
+                            // Check if current user has reacted with this emoji
+                            const userReaction = post.reactions.find(r => r.user_id === currentUserId && r.emoji === emoji);
+                            const isUserReaction = !!userReaction;
+                            
+                            return (
+                              <button
+                                key={`${post.id}-reaction-${emoji}`}
+                                onClick={() => {
+                                  if (currentUserId) {
+                                    toggleReaction(post.id, emoji, currentUserId);
+                                  }
+                                }}
+                                className={`text-sm px-2 py-1 rounded-full transition-colors ${
+                                  isUserReaction 
+                                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                                    : 'hover:bg-gray-100'
+                                }`}
+                              >
+                                {emoji} {count}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
 
                       {/* Action Buttons */}
                       <div className="mt-3 flex items-center space-x-6">
-                        {/* Reaction Buttons */}
-                        <div className="flex items-center space-x-2">
+                        {/* Reaction Button with Popup */}
+                        <div className="relative reaction-picker">
                           <button
-                            onClick={() => addReaction(post.id, '👍')}
-                            disabled={addingReaction[post.id]}
-                            className="flex items-center space-x-1 text-gray-500 hover:text-indigo-600 transition-colors disabled:opacity-50"
+                            onClick={() => toggleReactionPicker(post.id)}
+                            className="text-gray-400 hover:text-indigo-600 transition-colors"
                           >
-                            <span>👍</span>
-                            {addingReaction[post.id] && (
-                              <div className="animate-spin rounded-full h-3 w-3 border-b border-indigo-600"></div>
-                            )}
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.5 7.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-5 3.5c.33 2.33 2.33 4 4.5 4s4.17-1.67 4.5-4H8.5z"/>
+                            </svg>
                           </button>
-                          <button
-                            onClick={() => addReaction(post.id, '❤️')}
-                            disabled={addingReaction[post.id]}
-                            className="flex items-center space-x-1 text-gray-500 hover:text-red-600 transition-colors disabled:opacity-50"
-                          >
-                            <span>❤️</span>
-                          </button>
-                          <button
-                            onClick={() => addReaction(post.id, '🎾')}
-                            disabled={addingReaction[post.id]}
-                            className="flex items-center space-x-1 text-gray-500 hover:text-green-600 transition-colors disabled:opacity-50"
-                          >
-                            <span>🎾</span>
-                          </button>
+                          
+                          {/* Reaction Picker Popup */}
+                          {showReactionPicker[post.id] && (
+                            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10">
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => addReaction(post.id, '👍')}
+                                  disabled={addingReaction[post.id]}
+                                  className="text-2xl hover:scale-110 transition-transform disabled:opacity-50"
+                                >
+                                  👍
+                                </button>
+                                <button
+                                  onClick={() => addReaction(post.id, '❤️')}
+                                  disabled={addingReaction[post.id]}
+                                  className="text-2xl hover:scale-110 transition-transform disabled:opacity-50"
+                                >
+                                  ❤️
+                                </button>
+                                <button
+                                  onClick={() => addReaction(post.id, '🏸')}
+                                  disabled={addingReaction[post.id]}
+                                  className="text-2xl hover:scale-110 transition-transform disabled:opacity-50"
+                                >
+                                  🏸
+                                </button>
+                                <button
+                                  onClick={() => addReaction(post.id, '🔥')}
+                                  disabled={addingReaction[post.id]}
+                                  className="text-2xl hover:scale-110 transition-transform disabled:opacity-50"
+                                >
+                                  🔥
+                                </button>
+                                <button
+                                  onClick={() => addReaction(post.id, '👏')}
+                                  disabled={addingReaction[post.id]}
+                                  className="text-2xl hover:scale-110 transition-transform disabled:opacity-50"
+                                >
+                                  👏
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {/* Comment Button */}
@@ -241,11 +326,7 @@ export default function FeedScreen({ onCreatePost, onUserClick }: { onCreatePost
                             <div className="space-y-3">
                               {postComments[post.id].map((comment) => (
                                 <div key={comment.id} className="flex items-start space-x-2">
-                                  <div className="h-6 w-6 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <span className="text-xs font-medium text-gray-600">
-                                      {comment.user?.full_name?.charAt(0) || '?'}
-                                    </span>
-                                  </div>
+                                  <UserAvatar user={users[comment.user_id] || { id: comment.user_id, username: 'Unknown' } as User} size="sm" className="flex-shrink-0" />
                                   <div className="flex-1 min-w-0">
                                     <div className="bg-gray-50 rounded-lg px-3 py-2">
                                       <div className="flex items-center space-x-2 mb-1">

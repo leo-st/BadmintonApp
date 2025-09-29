@@ -55,8 +55,26 @@ class ApiService {
   }
 
   // Match endpoints
-  async getMatches(): Promise<Match[]> {
-    return this.request('/matches');
+  async getMatches(filters?: {
+    match_type?: string;
+    status?: string;
+    player_ids?: number[];
+    tournament_id?: number;
+    skip?: number;
+    limit?: number;
+  }): Promise<Match[]> {
+    const params = new URLSearchParams();
+    if (filters?.match_type) params.append('match_type', filters.match_type);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.player_ids && filters.player_ids.length > 0) {
+      params.append('player_ids', filters.player_ids.join(','));
+    }
+    if (filters?.tournament_id) params.append('tournament_id', filters.tournament_id.toString());
+    if (filters?.skip) params.append('skip', filters.skip.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    
+    const queryString = params.toString();
+    return this.request(`/matches${queryString ? `?${queryString}` : ''}`);
   }
 
   // Tournament endpoints
@@ -99,6 +117,12 @@ class ApiService {
     return this.request<{ message: string }>(`/posts/${postId}/reactions`, {
       method: 'POST',
       body: JSON.stringify(reactionData),
+    });
+  }
+
+  async removeReactionFromPost(postId: number, emoji: string): Promise<void> {
+    return this.request<void>(`/posts/${postId}/reactions/${emoji}`, {
+      method: 'DELETE',
     });
   }
 
@@ -168,6 +192,26 @@ class ApiService {
     return this.request<{ message: string }>('/users/me/change-password', {
       method: 'POST',
       body: JSON.stringify(passwordData),
+    });
+  }
+
+  // Profile picture methods
+  async uploadProfilePicture(file: File): Promise<{ message: string; profile_picture_url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return this.request<{ message: string; profile_picture_url: string }>('/users/me/profile-picture', {
+      method: 'POST',
+      headers: {
+        // Don't set Content-Type for FormData - let browser set it with boundary
+      },
+      body: formData,
+    });
+  }
+
+  async deleteProfilePicture(): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/users/me/profile-picture', {
+      method: 'DELETE',
     });
   }
 

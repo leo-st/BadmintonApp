@@ -61,7 +61,9 @@ def get_user_with_id(user_id: int, db: Session) -> Dict:
         "role_id": user.role_id,
         "role_name": role_name,
         "permissions": permissions,
-        "medals": medal_counts
+        "medals": medal_counts,
+        "profile_picture_url": user.profile_picture_url,
+        "profile_picture_updated_at": user.profile_picture_updated_at
     }
 
 
@@ -70,6 +72,10 @@ def get_user_me(user: User, db: Session) -> Dict:
     medal_counts = user.get_medal_counts()
     permissions = user.get_permissions(db)
     role_name = user.role.role_name if user.role else None
+    
+    import logging
+    logger = logging.getLogger("app.services.user_service")
+    logger.info(f"get_user_me - user.profile_picture_url: {user.profile_picture_url}")
     
     return {
         "id": user.id,

@@ -474,7 +474,15 @@ class PostService:
             "updated_at": post.updated_at,
             "is_deleted": post.is_deleted,
             "attachments": [AttachmentResponse.from_orm(att) for att in post.attachments],
-            "reactions": [],  # Simplified - exclude reactions for now to avoid user data complexity
+            "reactions": [
+                {
+                    "id": reaction.id,
+                    "post_id": reaction.post_id,
+                    "user_id": reaction.user_id,
+                    "emoji": reaction.emoji,
+                    "created_at": reaction.created_at
+                } for reaction in post.reactions
+            ],
             "reaction_counts": reaction_counts,
             "comment_count": comment_count
         }

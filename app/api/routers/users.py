@@ -286,6 +286,9 @@ async def upload_profile_picture(
         db.commit()
         db.refresh(user)
         
+        logger.info(f"Updated user {user.id} profile picture to: {profile_picture_url}")
+        logger.info(f"User profile_picture_url after update: {user.profile_picture_url}")
+        
         return {
             "message": "Profile picture uploaded successfully",
             "profile_picture_url": profile_picture_url

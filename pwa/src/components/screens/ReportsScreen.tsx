@@ -69,8 +69,6 @@ export default function ReportsScreen({ onReportClick, onCreateReport, onUnseenC
 
       const response = await apiService.getReports(params);
       
-      // Debug: Log the reports to check for duplicates
-      console.log('Loaded reports:', response.reports.map(r => ({ id: r.id, title: r.content.substring(0, 50) })));
       
       if (reset) {
         setReports(response.reports);
