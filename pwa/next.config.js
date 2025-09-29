@@ -11,11 +11,11 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8000/:path*'
+        destination: 'https://badmintonapp-production.up.railway.app/:path*'
       },
       {
         source: '/uploads/:path*',
-        destination: 'http://localhost:8000/uploads/:path*'
+        destination: 'https://badmintonapp-production.up.railway.app/uploads/:path*'
       }
     ];
   },
