@@ -18,6 +18,7 @@ export default function ReportsScreen({ onReportClick, onCreateReport, onUnseenC
   const [unseenCount, setUnseenCount] = useState(0);
   const [searchText, setSearchText] = useState('');
   const [addingReaction, setAddingReaction] = useState<{ [reportId: number]: boolean }>({});
+  const [showReactionPicker, setShowReactionPicker] = useState<number | null>(null);
   const [editingReport, setEditingReport] = useState<number | null>(null);
   const [deletingReport, setDeletingReport] = useState<number | null>(null);
   const [editData, setEditData] = useState({
@@ -39,6 +40,20 @@ export default function ReportsScreen({ onReportClick, onCreateReport, onUnseenC
     loadReports();
     loadUnseenCount();
   }, []);
+
+  // Close reaction picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showReactionPicker) {
+        setShowReactionPicker(null);
+      }
+    };
+
+    if (showReactionPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showReactionPicker]);
 
   useEffect(() => {
     if (searchText || dateFrom || dateTo) {
@@ -115,11 +130,22 @@ export default function ReportsScreen({ onReportClick, onCreateReport, onUnseenC
     }
   };
 
-  const addReaction = async (reportId: number, emoji: string) => {
+  const toggleReaction = async (reportId: number, emoji: string) => {
     try {
       setAddingReaction(prev => ({ ...prev, [reportId]: true }));
-      const reactionData: ReportReactionCreate = { emoji };
-      await apiService.addReportReaction(reportId, reactionData);
+      
+      // Check if user already reacted with this emoji
+      const report = reports.find(r => r.id === reportId);
+      const userReaction = report?.reactions?.find(r => r.user_id === currentUser?.id && r.emoji === emoji);
+      
+      if (userReaction) {
+        // Remove reaction
+        await apiService.removeReportReaction(reportId, userReaction.id);
+      } else {
+        // Add reaction
+        const reactionData: ReportReactionCreate = { emoji };
+        await apiService.addReportReaction(reportId, reactionData);
+      }
       
       // Update the specific report's reaction counts instead of reloading all
       const updatedReport = await apiService.getReport(reportId);
@@ -127,8 +153,8 @@ export default function ReportsScreen({ onReportClick, onCreateReport, onUnseenC
         report.id === reportId ? updatedReport : report
       ));
     } catch (err) {
-      console.error('Error adding reaction:', err);
-      alert('Failed to add reaction');
+      console.error('Error toggling reaction:', err);
+      alert('Failed to update reaction');
     } finally {
       setAddingReaction(prev => ({ ...prev, [reportId]: false }));
     }
@@ -435,30 +461,63 @@ export default function ReportsScreen({ onReportClick, onCreateReport, onUnseenC
                       <span>{formatDateTime(report.created_at)}</span>
                     </div>
 
-                    {/* Reaction Buttons */}
+                    {/* Reaction Section */}
                     <div className="mt-3 flex items-center space-x-2">
-                      {['👍', '❤️', '🎉', '😊', '🔥', '👏'].map(emoji => (
-                        <button
-                          key={`${report.id}-reaction-${emoji}`}
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent navigating to detail screen
-                            addReaction(report.id, emoji);
-                          }}
-                          disabled={addingReaction[report.id]}
-                          className={`flex items-center space-x-1 px-2 py-1 rounded-full border border-gray-200 transition-colors text-sm ${
-                            addingReaction[report.id] 
-                              ? 'bg-gray-100 cursor-not-allowed opacity-50' 
-                              : 'bg-gray-50 hover:bg-gray-100'
-                          }`}
-                        >
-                          <span>{emoji}</span>
-                          {report.reaction_counts?.[emoji] && (
-                            <span className="text-gray-600 font-medium">
-                              {report.reaction_counts[emoji]}
-                            </span>
-                          )}
-                        </button>
-                      ))}
+                      {/* Emoji Picker Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowReactionPicker(report.id);
+                        }}
+                        className="flex items-center space-x-1 px-2 py-1 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors text-sm"
+                      >
+                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-gray-600">React</span>
+                      </button>
+
+                      {/* Reaction Counts */}
+                      {report.reaction_counts && Object.entries(report.reaction_counts).map(([emoji, count]) => {
+                        const userReaction = report.reactions?.find(r => r.user_id === currentUser?.id && r.emoji === emoji);
+                        return (
+                          <button
+                            key={`${report.id}-reaction-${emoji}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleReaction(report.id, emoji);
+                            }}
+                            disabled={addingReaction[report.id]}
+                            className={`flex items-center space-x-1 px-2 py-1 rounded-full border transition-colors text-sm ${
+                              userReaction 
+                                ? 'bg-blue-100 text-blue-700 border-blue-200' 
+                                : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
+                            } ${addingReaction[report.id] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            <span>{emoji}</span>
+                            <span className="font-medium">{count}</span>
+                          </button>
+                        );
+                      })}
+
+                      {/* Reaction Picker Popup */}
+                      {showReactionPicker === report.id && (
+                        <div className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex space-x-1">
+                          {['👍', '❤️', '🎉', '😊', '🔥', '👏'].map(emoji => (
+                            <button
+                              key={emoji}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleReaction(report.id, emoji);
+                                setShowReactionPicker(null);
+                              }}
+                              className="text-2xl hover:bg-gray-100 rounded p-1 transition-colors"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   
