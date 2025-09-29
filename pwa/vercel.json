@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://badmintonapp-production.up.railway.app/:path*"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "https://badmintonapp-production.up.railway.app/uploads/:path*"
     }
   ],
   "headers": [

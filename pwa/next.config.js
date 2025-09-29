@@ -7,18 +7,6 @@ const withPWA = require('next-pwa')({
 });
 
 const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'https://badmintonapp-production.up.railway.app/:path*'
-      },
-      {
-        source: '/uploads/:path*',
-        destination: 'https://badmintonapp-production.up.railway.app/uploads/:path*'
-      }
-    ];
-  },
   serverExternalPackages: [],
   eslint: {
     ignoreDuringBuilds: true,
